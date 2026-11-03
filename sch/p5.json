@@ -1,0 +1,233 @@
+{
+ "project": "b1dce3f6bd3848a43f24862f90c206e59225e257ec6aa93111f9a7ddeb7da7c2",
+ "page": "24d40ada118a4a7f",
+ "power": [
+  "VBAT_MOT",
+  "3V3_PB",
+  "5V_LOGIC",
+  "VSERVO"
+ ],
+ "ground": [
+  "GND"
+ ],
+ "parts": [
+  {
+   "ref": "J513",
+   "lcsc": "C5124634",
+   "x": 330,
+   "y": 560,
+   "rot": 0,
+   "nets": {
+    "1": "5V_LOGIC",
+    "2": "5V_LOGIC",
+    "3": "5V_LOGIC",
+    "4": "5V_LOGIC",
+    "5": "GND",
+    "6": "GND",
+    "7": "CAN_TX",
+    "8": "CAN_RX",
+    "9": "GND",
+    "10": "I2C_SCL",
+    "11": "I2C_SDA",
+    "12": "IOX_INT",
+    "13": "GND",
+    "14": "MOT_EN",
+    "15": "BATADC",
+    "16": "GND",
+    "17": "MOT_L1",
+    "18": "MOT_L2",
+    "19": "MOT_R1",
+    "20": "MOT_R2",
+    "21": "GND",
+    "22": "ENC_L_A",
+    "23": "ENC_L_B",
+    "24": "ENC_R_A",
+    "25": "ENC_R_B",
+    "26": "GND",
+    "27": "STP_L",
+    "28": "STP_R",
+    "29": "USTEP_TX",
+    "30": "USTEP_RX",
+    "31": "GND",
+    "32": "SRV1",
+    "33": "SRV2",
+    "34": "SRV3",
+    "35": "SRV4",
+    "36": "GND",
+    "37": "IMON",
+    "38": "GND",
+    "39": "GND",
+    "40": "GND"
+   },
+   "nc": []
+  },
+  {
+   "ref": "U502",
+   "lcsc": "C465732",
+   "x": 760,
+   "y": 580,
+   "rot": 0,
+   "nets": {
+    "INT#": "IOX_INT",
+    "A1": "GND",
+    "A2": "GND",
+    "A0": "3V3_PB",
+    "P00": "STEP_EN",
+    "P01": "DIR_L",
+    "P02": "DIR_R",
+    "P03": "MOT_EN_S",
+    "P04": "MOT_FLT",
+    "P05": "INA_ALERT",
+    "P06": "VMOT_OK",
+    "P07": "LED_PB_N",
+    "GND": "GND",
+    "SCL": "I2C_SCL",
+    "SDA": "I2C_SDA",
+    "VCC": "3V3_PB"
+   },
+   "nc": [
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20"
+   ]
+  },
+  {
+   "ref": "C505",
+   "lcsc": "C14663",
+   "x": 620,
+   "y": 700,
+   "rot": 90,
+   "nets": {
+    "1": "3V3_PB",
+    "2": "GND"
+   },
+   "nc": []
+  },
+  {
+   "ref": "R509",
+   "lcsc": "C31850",
+   "x": 880,
+   "y": 700,
+   "rot": 90,
+   "nets": {
+    "1": "VMOT_OK",
+    "2": "VBAT_MOT"
+   },
+   "nc": []
+  },
+  {
+   "ref": "D503",
+   "lcsc": "C2112",
+   "x": 950,
+   "y": 700,
+   "rot": 90,
+   "nets": {
+    "K": "VMOT_OK",
+    "A": "GND"
+   },
+   "nc": []
+  },
+  {
+   "ref": "R510",
+   "lcsc": "C21190",
+   "x": 1020,
+   "y": 700,
+   "rot": 90,
+   "nets": {
+    "1": "3V3_PB",
+    "2": "LED_PB_A"
+   },
+   "nc": []
+  },
+  {
+   "ref": "LED501",
+   "lcsc": "C12624",
+   "x": 1090,
+   "y": 700,
+   "rot": 90,
+   "nets": {
+    "A": "LED_PB_A",
+    "K": "LED_PB_N"
+   },
+   "nc": []
+  },
+  {
+   "ref": "D502",
+   "lcsc": "C124205",
+   "x": 560,
+   "y": 340,
+   "rot": 90,
+   "nets": {
+    "1": "STEPL_TXD",
+    "2": "USTEP_RX"
+   },
+   "nc": []
+  },
+  {
+   "ref": "D504",
+   "lcsc": "C124205",
+   "x": 640,
+   "y": 340,
+   "rot": 90,
+   "nets": {
+    "1": "STEPR_TXD",
+    "2": "USTEP_RX"
+   },
+   "nc": []
+  },
+  {
+   "ref": "R502",
+   "lcsc": "C25804",
+   "x": 720,
+   "y": 340,
+   "rot": 90,
+   "nets": {
+    "1": "3V3_PB",
+    "2": "USTEP_RX"
+   },
+   "nc": []
+  },
+  {
+   "ref": "R503",
+   "lcsc": "C22775",
+   "x": 800,
+   "y": 340,
+   "rot": 90,
+   "nets": {
+    "1": "USTEP_TX",
+    "2": "STEPL_RXD"
+   },
+   "nc": []
+  },
+  {
+   "ref": "R504",
+   "lcsc": "C22775",
+   "x": 880,
+   "y": 340,
+   "rot": 90,
+   "nets": {
+    "1": "USTEP_TX",
+    "2": "STEPR_RXD"
+   },
+   "nc": []
+  },
+  {
+   "ref": "R511",
+   "lcsc": "C25804",
+   "x": 620,
+   "y": 450,
+   "rot": 90,
+   "nets": {
+    "1": "STEP_EN",
+    "2": "GND"
+   },
+   "nc": []
+  }
+ ],
+ "name": "p5"
+}

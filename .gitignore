@@ -1,0 +1,40 @@
+# ============================================================
+# 电赛小车2026 重建工具包 —— 发布用 .gitignore
+# 私有归档；第三方安装包与运行产物不入库。
+# 本规则集下的入库量：70 个文件（含本文件、.gitattributes 与 requirements.txt）。
+# ============================================================
+
+# --- 1. Freerouting 安装包（84.61 MiB，第三方二进制）-------
+# 上游：https://github.com/freerouting/freerouting/releases
+# 期望资产：freerouting-2.5.0-windows-x64.msi（88,718,425 字节）
+# SHA-256：f5144acbeefa53248a0e0f2078a13600be73710bb386c013ee11cf0aa9cc10fb
+# 需按 README 第 0 节自行下载后解包，不入版本库。
+/freerouting/*.msi
+/freerouting/*.exe
+
+# --- 2. Python 缓存（29 个 .pyc）---------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+
+# --- 3. 运行产物（当前磁盘上 0 份，预防性）-----------------
+# batch_route.py / rebuild_route.py 会写 in.dsn、run.log、en/freerouting.log；
+# ses_polish.py 处理 *.ses。这些都是一次性中间件。
+*.log
+*.ses
+*.dsn
+
+# --- 4. 系统 / 编辑器杂项 -----------------------------------
+Thumbs.db
+desktop.ini
+.DS_Store
+~$*
+.vscode/
+.idea/
+
+# --- 5. 明确保留：不要往本文件添加以下规则 -------------------
+#   参考数据/           发布快照、地面评分、成品图（唯一视觉证据）
+#   route/dumpF.json    1.59 MiB，place_from_dump.py 的必需输入
+#   sch/*.json          11 页原理图规格 + 输入规格，是脚本的输入
+#   sch/lcsc_cache.json 93 个 LCSC 料号缓存，离线复现需要
+#   route/swap_c.json   定稿引脚交换表，gen_specC.py 的输入

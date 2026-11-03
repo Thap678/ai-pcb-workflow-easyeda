@@ -1,0 +1,5 @@
+# CPython 3.12（原 .pyc 的 cpython-312 标签可证）
+shapely>=2.0
+numpy>=1.26
+scipy>=1.11
+Pillow>=10.0

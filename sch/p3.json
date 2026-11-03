@@ -1,0 +1,501 @@
+{
+ "project": "b1dce3f6bd3848a43f24862f90c206e59225e257ec6aa93111f9a7ddeb7da7c2",
+ "page": "6b5b68482e03c835",
+ "power": [
+  "VBAT_SYS",
+  "VBAT_MOT",
+  "5V_LOGIC",
+  "VSERVO",
+  "PWR_ON"
+ ],
+ "ground": [
+  "GND"
+ ],
+ "parts": [
+  {
+   "ref": "U301",
+   "lcsc": "C1850354",
+   "x": 400,
+   "y": 640,
+   "nets": {
+    "BOOT": "BOOT_5V_LOGIC",
+    "VIN": "VBAT_SYS",
+    "EN": "EN_5V_LOGIC",
+    "RT/CLK": "RT_5V_LOGIC",
+    "FB": "FB_5V_LOGIC",
+    "COMP": "COMP_5V_LOGIC",
+    "GND": "GND",
+    "SW": "SW_5V_LOGIC",
+    "9": "GND"
+   }
+  },
+  {
+   "ref": "C301",
+   "lcsc": "C29823",
+   "x": 100,
+   "y": 700,
+   "rot": 90,
+   "nets": {
+    "1": "VBAT_SYS",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "C302",
+   "lcsc": "C29823",
+   "x": 160,
+   "y": 700,
+   "rot": 90,
+   "nets": {
+    "1": "VBAT_SYS",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "C303",
+   "lcsc": "C14663",
+   "x": 220,
+   "y": 700,
+   "rot": 90,
+   "nets": {
+    "1": "VBAT_SYS",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "R301",
+   "lcsc": "C23175",
+   "x": 100,
+   "y": 560,
+   "rot": 90,
+   "nets": {
+    "1": "PWR_ON",
+    "2": "EN_5V_LOGIC"
+   }
+  },
+  {
+   "ref": "R302",
+   "lcsc": "C23129",
+   "x": 160,
+   "y": 560,
+   "rot": 90,
+   "nets": {
+    "1": "EN_5V_LOGIC",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "R303",
+   "lcsc": "C4197",
+   "x": 230,
+   "y": 560,
+   "rot": 90,
+   "nets": {
+    "1": "RT_5V_LOGIC",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "C304",
+   "lcsc": "C14663",
+   "x": 560,
+   "y": 710,
+   "rot": 90,
+   "nets": {
+    "1": "BOOT_5V_LOGIC",
+    "2": "SW_5V_LOGIC"
+   }
+  },
+  {
+   "ref": "D301",
+   "lcsc": "C85100",
+   "x": 560,
+   "y": 580,
+   "rot": 90,
+   "nets": {
+    "K": "SW_5V_LOGIC",
+    "A": "GND"
+   }
+  },
+  {
+   "ref": "L301",
+   "lcsc": "C47148381",
+   "x": 660,
+   "y": 650,
+   "nets": {
+    "1": "SW_5V_LOGIC",
+    "2": "5V_LOGIC"
+   }
+  },
+  {
+   "ref": "C305",
+   "lcsc": "C77101",
+   "x": 760,
+   "y": 640,
+   "rot": 90,
+   "nets": {
+    "1": "5V_LOGIC",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "C306",
+   "lcsc": "C77101",
+   "x": 820,
+   "y": 640,
+   "rot": 90,
+   "nets": {
+    "1": "5V_LOGIC",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "C307",
+   "lcsc": "C77101",
+   "x": 880,
+   "y": 640,
+   "rot": 90,
+   "nets": {
+    "1": "5V_LOGIC",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "R304",
+   "lcsc": "C23082",
+   "x": 960,
+   "y": 700,
+   "rot": 90,
+   "nets": {
+    "1": "FB_5V_LOGIC",
+    "2": "5V_LOGIC"
+   }
+  },
+  {
+   "ref": "R305",
+   "lcsc": "C22772",
+   "x": 960,
+   "y": 580,
+   "rot": 90,
+   "nets": {
+    "1": "FB_5V_LOGIC",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "R306",
+   "lcsc": "C25954",
+   "x": 1030,
+   "y": 700,
+   "rot": 90,
+   "nets": {
+    "1": "COMP_5V_LOGIC",
+    "2": "CMPZ_5V_LOGIC"
+   }
+  },
+  {
+   "ref": "C308",
+   "lcsc": "C53987",
+   "x": 1030,
+   "y": 580,
+   "rot": 90,
+   "nets": {
+    "1": "CMPZ_5V_LOGIC",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "C309",
+   "lcsc": "C1671",
+   "x": 1100,
+   "y": 640,
+   "rot": 90,
+   "nets": {
+    "1": "COMP_5V_LOGIC",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "R307",
+   "lcsc": "C22975",
+   "x": 700,
+   "y": 500,
+   "rot": 90,
+   "nets": {
+    "1": "5V_LOGIC",
+    "2": "LED_5V_LOGIC"
+   }
+  },
+  {
+   "ref": "LED301",
+   "lcsc": "C12624",
+   "x": 800,
+   "y": 500,
+   "rot": 90,
+   "nets": {
+    "A": "LED_5V_LOGIC",
+    "K": "GND"
+   }
+  },
+  {
+   "ref": "U351",
+   "lcsc": "C1850354",
+   "x": 400,
+   "y": 300,
+   "nets": {
+    "BOOT": "BOOT_VSERVO",
+    "VIN": "VBAT_MOT",
+    "EN": "EN_VSERVO",
+    "RT/CLK": "RT_VSERVO",
+    "FB": "FB_VSERVO",
+    "COMP": "COMP_VSERVO",
+    "GND": "GND",
+    "SW": "SW_VSERVO",
+    "9": "GND"
+   }
+  },
+  {
+   "ref": "C351",
+   "lcsc": "C29823",
+   "x": 100,
+   "y": 360,
+   "rot": 90,
+   "nets": {
+    "1": "VBAT_MOT",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "C352",
+   "lcsc": "C29823",
+   "x": 160,
+   "y": 360,
+   "rot": 90,
+   "nets": {
+    "1": "VBAT_MOT",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "C353",
+   "lcsc": "C14663",
+   "x": 220,
+   "y": 360,
+   "rot": 90,
+   "nets": {
+    "1": "VBAT_MOT",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "R351",
+   "lcsc": "C23175",
+   "x": 100,
+   "y": 220,
+   "rot": 90,
+   "nets": {
+    "1": "VBAT_MOT",
+    "2": "EN_VSERVO"
+   }
+  },
+  {
+   "ref": "R352",
+   "lcsc": "C23129",
+   "x": 160,
+   "y": 220,
+   "rot": 90,
+   "nets": {
+    "1": "EN_VSERVO",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "R353",
+   "lcsc": "C4197",
+   "x": 230,
+   "y": 220,
+   "rot": 90,
+   "nets": {
+    "1": "RT_VSERVO",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "C354",
+   "lcsc": "C14663",
+   "x": 560,
+   "y": 370,
+   "rot": 90,
+   "nets": {
+    "1": "BOOT_VSERVO",
+    "2": "SW_VSERVO"
+   }
+  },
+  {
+   "ref": "D351",
+   "lcsc": "C85100",
+   "x": 560,
+   "y": 290,
+   "rot": 90,
+   "nets": {
+    "K": "SW_VSERVO",
+    "A": "GND"
+   }
+  },
+  {
+   "ref": "L351",
+   "lcsc": "C47148381",
+   "x": 660,
+   "y": 310,
+   "nets": {
+    "1": "SW_VSERVO",
+    "2": "VSERVO"
+   }
+  },
+  {
+   "ref": "C355",
+   "lcsc": "C77101",
+   "x": 760,
+   "y": 300,
+   "rot": 90,
+   "nets": {
+    "1": "VSERVO",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "C356",
+   "lcsc": "C77101",
+   "x": 820,
+   "y": 300,
+   "rot": 90,
+   "nets": {
+    "1": "VSERVO",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "C357",
+   "lcsc": "C77101",
+   "x": 880,
+   "y": 300,
+   "rot": 90,
+   "nets": {
+    "1": "VSERVO",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "R354",
+   "lcsc": "C23225",
+   "x": 960,
+   "y": 360,
+   "rot": 90,
+   "nets": {
+    "1": "VSERVO",
+    "2": "FB_VSERVO"
+   }
+  },
+  {
+   "ref": "R355",
+   "lcsc": "C22772",
+   "x": 960,
+   "y": 285,
+   "rot": 90,
+   "nets": {
+    "1": "FB_VSERVO",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "R356",
+   "lcsc": "C4184",
+   "x": 1030,
+   "y": 360,
+   "rot": 90,
+   "nets": {
+    "1": "COMP_VSERVO",
+    "2": "CMPZ_VSERVO"
+   }
+  },
+  {
+   "ref": "C358",
+   "lcsc": "C53987",
+   "x": 1030,
+   "y": 285,
+   "rot": 90,
+   "nets": {
+    "1": "CMPZ_VSERVO",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "C359",
+   "lcsc": "C1671",
+   "x": 1100,
+   "y": 300,
+   "rot": 90,
+   "nets": {
+    "1": "COMP_VSERVO",
+    "2": "GND"
+   }
+  },
+  {
+   "ref": "R357",
+   "lcsc": "C22975",
+   "x": 280,
+   "y": 470,
+   "rot": 90,
+   "nets": {
+    "1": "VSERVO",
+    "2": "LED_VSERVO"
+   }
+  },
+  {
+   "ref": "LED351",
+   "lcsc": "C12624",
+   "x": 380,
+   "y": 470,
+   "rot": 90,
+   "nets": {
+    "A": "LED_VSERVO",
+    "K": "GND"
+   }
+  },
+  {
+   "ref": "C310",
+   "lcsc": "C53084458",
+   "x": 280,
+   "y": 700,
+   "rot": 90,
+   "nets": {
+    "1": "VBAT_SYS",
+    "2": "GND"
+   },
+   "nc": []
+  },
+  {
+   "ref": "C360",
+   "lcsc": "C53084458",
+   "x": 280,
+   "y": 360,
+   "rot": 90,
+   "nets": {
+    "1": "VBAT_MOT",
+    "2": "GND"
+   },
+   "nc": []
+  },
+  {
+   "ref": "TP301",
+   "lcsc": "C5199798",
+   "x": 1120,
+   "y": 450,
+   "rot": 0,
+   "nets": {
+    "1": "VSERVO"
+   },
+   "nc": []
+  }
+ ]
+}

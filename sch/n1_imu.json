@@ -1,0 +1,32 @@
+{
+ "project": "0486116df89154733a64c3b0cae3ce7ec6579ab60452801dda909d0bd7aa27e5",
+ "page": "42fa4b30c4583105",
+ "name": "m1_imu",
+ "power": [
+  "5V_MAIN"
+ ],
+ "ground": [
+  "GND"
+ ],
+ "parts": [
+  {
+   "ref": "U608",
+   "x": 150,
+   "y": 275,
+   "nets": {
+    "D0": "IMU_INT",
+    "VCC*": "5V_MAIN",
+    "GND*": "GND",
+    "SDA": "I2C_SDA",
+    "SCL": "I2C_SCL"
+   },
+   "nc": [
+    "3",
+    "4",
+    "6",
+    "7",
+    "12"
+   ]
+  }
+ ]
+}
