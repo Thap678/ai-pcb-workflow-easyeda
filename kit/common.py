@@ -24,8 +24,10 @@ def _pop_flag(name):
     return None
 
 
-_CFG_PATH = _pop_flag('--cfg') or os.environ.get('KIT_CFG') or 'board.toml'
+_CFG_PATH = os.path.abspath(_pop_flag('--cfg') or os.environ.get('KIT_CFG') or 'board.toml')
 _BOARD = _pop_flag('--board') or os.environ.get('KIT_BOARD')
+os.environ['KIT_CFG'] = _CFG_PATH                      # child scripts (build_pages -> drv) see the same config
+if _BOARD: os.environ['KIT_BOARD'] = _BOARD
 _cfg = None
 
 
@@ -137,10 +139,42 @@ def js(code, timeout=60, doc=True):
     return d['result']['value']
 
 
-def window_id():
+def window_id(project=None):
+    """The connected EasyEDA window showing `project` (default: the config's); commands like `project export`
+    need an explicit window, and several windows can be connected at once."""
+    project = project or board().project
     p = subprocess.run(['easyeda', 'health'], capture_output=True, text=True, encoding='utf-8', errors='replace')
     d = parse(p.stdout) or {}
     wins = ((d.get('found') or {}).get('raw') or {}).get('windows') or []
     if not wins:
         raise SystemExit('no EasyEDA window connected: start `easyeda daemon start`, open the project, check `easyeda health`')
-    return wins[0]['windowId']
+    mine = [w for w in wins if (w.get('context') or {}).get('projectUuid') == project]
+    if mine:
+        return mine[0]['windowId']
+    if len(wins) == 1:
+        return wins[0]['windowId']
+    raise SystemExit(f'{len(wins)} EasyEDA windows connected, none shows project {project[:12]}...: open it in one window')
+
+
+def export_project(out):
+    """Export the whole project to a new .epro2 (removes an existing file at `out` first). Returns the CLI reply."""
+    B = board()
+    if os.path.exists(out):
+        os.remove(out)
+    p = subprocess.run(['easyeda', 'project', 'export', '--window', window_id(B.project), '--project-uuid', B.project,
+                        '--out', out], capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=600)
+    return parse(p.stdout) or {'ok': False, 'error': {'message': (p.stdout + p.stderr)[-300:]}}
+
+
+def page_text_from_epro2(epro2, page):
+    """One schematic page out of an .epro2 archive, in .esch2 record format (the archive's .epru is the documents
+    concatenated, each starting with a DOCHEAD record). Works for folder (.eprj3) and database (.eprj2) projects."""
+    import zipfile
+    z = zipfile.ZipFile(epro2)
+    name = next(n for n in z.namelist() if n.endswith('.epru'))
+    lines = z.read(name).decode('utf-8', 'replace').split('\n')
+    start = next((i for i, l in enumerate(lines) if '"docType":"SCH_PAGE"' in l and f'"uuid":"{page}"' in l), None)
+    if start is None:
+        return None
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith('{"type":"DOCHEAD"}')), len(lines))
+    return '\n'.join(lines[start:end]) + '\n'

@@ -43,6 +43,7 @@ python tools/check_env.py            # 全部 OK 才往下走；daemon 没起：
 2. 离线检查：`python kit/sch/check_specs.py <本板所有页.json>` → `RESULT OK`（无单脚网络、无重复位号、无缺料号）。
 3. 建图：`python kit/sch/build_pages.py <页1.json> <页2.json> ...` → 每页 `verify ... 0 problems`。
    - 有脚没连上：`python kit/sch/drv.py <页.json> connect <位号>`，存盘后重跑这一页的核对。
+   - 报 `got {''}` 且重连提示 `pin already connected to net "$1N.."`：`python kit/sch/fix_pin.py <页.json> <位号> <脚号>`。
 4. **过关**：每页 0 problems；`check_specs` 的网络数和设计一致；多板叠插的连接器逐脚镜像核对过。
 
 ## 阶段 4：PCB 导入与布局（docs/04）

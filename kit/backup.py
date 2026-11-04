@@ -13,7 +13,7 @@ label = sys.argv[1] if len(sys.argv) > 1 else 'snapshot'
 d = sys.argv[2] if len(sys.argv) > 2 else K.cfg().get('backup', {}).get('dir') or os.path.join(os.path.expanduser('~'), 'Documents', 'pcb_backups')
 d = B.path(os.path.expanduser(d)); os.makedirs(d, exist_ok=True)
 out = os.path.join(d, f"{time.strftime('%Y-%m-%d_%H%M')}_{label}.epro2")
-p = subprocess.run(['easyeda', 'project', 'export', '--window', K.window_id(), '--project-uuid', B.project, '--out', out],
+p = subprocess.run(['easyeda', 'project', 'export', '--window', K.window_id(B.project), '--project-uuid', B.project, '--out', out],
                    capture_output=True, text=True, encoding='utf-8', errors='replace')
 r = K.parse(p.stdout) or {}
 print(out if r.get('ok') else 'FAILED: ' + (p.stdout + p.stderr)[-400:], (r.get('result') or {}).get('bytes', ''))

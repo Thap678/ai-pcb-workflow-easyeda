@@ -61,6 +61,12 @@ for s in specs: parts += json.load(open(s, encoding='utf-8'))['parts']
 page = json.load(open(specs[0], encoding='utf-8'))['page']
 d = run(['--project', project, 'sch', 'list', '--page', page, '--stay', '--include-pins'])
 live = {c.get('designator'): c for c in d['result']['components'] if c.get('componentType') == 'part'}
+# .esch2 files of folder projects store y as the API reports it; pages cut out of an .epro2 export store -y.
+# Pick the orientation under which more pins land on a wire end or a flag.
+all_pins = [(round(pp['x']), round(pp['y'])) for c in live.values() for pp in c['pins']]
+hit = lambda f: sum(1 for x, y in all_pins if f(x, y) in endpoint)
+flip = hit(lambda x, y: (x, -y)) > hit(lambda x, y: (x, y))
+at = (lambda x, y: (x, -y)) if flip else (lambda x, y: (x, y))
 problems, checked = [], 0
 for p in parts:
     c = live.get(p['ref'])
@@ -72,7 +78,7 @@ for p in parts:
         if not key.endswith('*'): hits = hits[:1]
         for t in hits: exp[t['pinNumber']] = net
     for pp in c['pins']:
-        n = pp['pinNumber']; nets = endpoint.get((round(pp['x']), round(pp['y'])), set())
+        n = pp['pinNumber']; nets = endpoint.get(at(round(pp['x']), round(pp['y'])), set())
         checked += 1
         if n in p.get('nc', []):
             if nets: problems.append(f"{p['ref']}.{n} marked NC but wired to {nets}")
