@@ -1,0 +1,111 @@
+# 电赛小车2026（上板 + 下板）的实际配置，2026-11-03 重建时用的值。
+# 自己复现时：新建空工程 -> 把下面所有 UUID 换成你的（inputs/gen_specC.py 顶部的 P / UP / LO 也要换）。
+
+project = "5be68595f2b413c75a7f2937434f239f53e66b44c02f15a2e2e3494fe05d691c"
+project_dir = "../../../电赛资料重建/02_硬件设计/电赛小车2026"    # 相对本文件；换成你的工程文件夹
+default_board = "upper"
+
+[backup]
+dir = "~/Documents/电赛小车2026_备份"
+
+# ---- 上板（主控、传感）：2 层，80 x 87，天空星 STM32F407 核心板插座 + 传感/交互/串口 ----
+[boards.upper]
+pcb = "55840169c52b8bea"
+schematic = "f5f6836591f5450b"
+width_mm = 80
+height_mm = 87
+corner_mm = 3
+mount_holes_mm = [[4, 4], [76, 4], [4, 83], [76, 83]]
+mount_hole_d_mm = 3.2
+
+[boards.upper.rules]
+copper_mm = 0.15
+pour_mm = 0.25
+slot_copper_mm = 0.3
+slot_pour_mm = 0.5
+edge_mm = 0.3
+edge_pour_mm = 0.3
+track_default_mm = 0.25
+track_min_mm = 0.15
+
+[[boards.upper.track_classes]]
+name = "PWR_5V"                  # 叠板 5V 主干按 3 A
+min_mm = 0.5
+default_mm = 1.2
+nets = ["5V_MAIN", "5V_LOGIC"]
+
+[[boards.upper.track_classes]]
+name = "PWR_3V3"                 # 两路 LDO 各 <= 0.5 A
+min_mm = 0.3
+default_mm = 0.5
+nets = ["3V3_MAIN", "3V3_RF", "VCC_GRAY"]
+
+[[boards.upper.track_classes]]
+name = "GND"                     # 0.5 mm 时有 2-3 条线布不通，0.3 mm + 两面铺铜
+min_mm = 0.15
+default_mm = 0.3
+nets = ["GND"]
+
+[boards.upper.route]
+freerouting = "C:/fr_extract/freerouting/freerouting.exe"
+router_clearance_mm = 0.2
+boundary_inset_mm = 0.15
+edge_clearance_um = 450
+passes = 100
+workers = 4
+
+# r9-02：用户从 7 轮约 70 版里选的「信号过孔最少」配方；跑两次取样，旁边放过孔代价 60/80 对照
+[[boards.upper.route.variants]]
+id = "r9-02a"
+via = 70
+top = [1.0, 2.1]
+bot = [3.5, 4.5]
+top_dir = "horizontal"
+bot_dir = "horizontal"
+
+[[boards.upper.route.variants]]
+id = "r9-02b"
+via = 70
+top = [1.0, 2.1]
+bot = [3.5, 4.5]
+top_dir = "horizontal"
+bot_dir = "horizontal"
+
+[[boards.upper.route.variants]]
+id = "v60"
+via = 60
+top = [1.0, 2.1]
+bot = [3.5, 4.5]
+top_dir = "horizontal"
+bot_dir = "horizontal"
+
+[[boards.upper.route.variants]]
+id = "v80"
+via = 80
+top = [1.0, 2.1]
+bot = [3.5, 4.5]
+top_dir = "horizontal"
+bot_dir = "horizontal"
+
+[boards.upper.ground]
+net = "GND"
+pour_inset_mm = 0.3
+stitch_grid_mm = 4
+
+[boards.upper.fab]
+name = "nuedc2026_upper"
+layers = 2
+
+# ---- 下板（电源、驱动）：原理图已建，PCB 只有板框和孔，未布局 ----
+[boards.lower]
+pcb = "bc5b8c7810228ee1"
+schematic = "27cdda1376446595"
+width_mm = 80
+height_mm = 87
+corner_mm = 3
+mount_holes_mm = [[4, 4], [76, 4], [4, 83], [76, 83]]
+mount_hole_d_mm = 3.2
+
+[boards.lower.fab]
+name = "nuedc2026_lower"
+layers = 4

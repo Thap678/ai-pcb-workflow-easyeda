@@ -10,3 +10,5 @@
 *.json  -text diff
 *.js    -text diff
 *.txt   -text diff
+*.toml  -text diff
+*.csv   -text diff

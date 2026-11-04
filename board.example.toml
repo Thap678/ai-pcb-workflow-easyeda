@@ -1,0 +1,84 @@
+# 板子配置模板：复制成 board.toml 填好，所有 kit 脚本都读它（--cfg <path> / 环境变量 KIT_CFG / 当前目录的 board.toml）。
+# 单位：mm，除非键名写明。UUID 用 `easyeda doc ls --project <工程名>` 和工程文件 .eprj3 里的 sheets/pcbs 查。
+# 完整示例：examples/nuedc-car-2026/board.toml
+
+project = "<工程 UUID，64 位十六进制>"
+project_dir = "<嘉立创EDA 工程文件夹（含 .eprj3）的路径，可写相对本文件的路径>"
+default_board = "main"            # 不加 --board 时用哪块板
+
+[backup]
+dir = "~/Documents/pcb_backups"   # kit/backup.py 的默认目录：一定要在工作文件夹之外
+
+[boards.main]
+pcb = "<PCB 文档 UUID，16 位>"
+schematic = "<原理图文档 UUID>"
+width_mm = 80
+height_mm = 60
+corner_mm = 3                     # 板框圆角
+mount_holes_mm = [[4, 4], [76, 4], [4, 56], [76, 56]]   # 安装孔圆心；没有就写 []
+mount_hole_d_mm = 3.2             # M3 = 3.2
+
+[boards.main.rules]               # kit/pcb/rules.py；全部可省，下面是默认值（嘉立创常规工艺，1 oz，2 层）
+copper_mm = 0.15                  # 铜到铜
+pour_mm = 0.25                    # 铺铜到其他铜
+slot_copper_mm = 0.3              # 铜到槽/定位柱/固定脚
+slot_pour_mm = 0.5                # 铺铜到槽；也决定布线时离安装孔多远
+edge_mm = 0.3                     # 铜到板边
+edge_pour_mm = 0.3
+hole_mm = 0.25
+hole_pour_mm = 0.3
+track_default_mm = 0.25
+track_min_mm = 0.15
+via_d_mm = 0.6
+via_hole_mm = 0.3
+hole_to_hole_mm = 0.5
+
+# 电源/地的线宽规则：rules.py 建规则并把 nets 分配过去；fix_widths.py 导入后不让线宽低于 min_mm。
+# 线宽按电流估（1 oz 外层，温升约 10 °C）：3 A -> 1.2 mm，1 A -> 0.5 mm。
+[[boards.main.track_classes]]
+name = "PWR_5V"
+min_mm = 0.5
+default_mm = 1.2
+nets = ["5V"]
+
+[[boards.main.track_classes]]
+name = "PWR_3V3"
+min_mm = 0.3
+default_mm = 0.5
+nets = ["3V3"]
+
+[[boards.main.track_classes]]
+name = "GND"
+min_mm = 0.15
+default_mm = 0.3
+nets = ["GND"]
+
+[boards.main.route]               # kit/route/prep_dsn.py + route.py
+freerouting = "C:/fr_extract/freerouting/freerouting.exe"
+router_clearance_mm = 0.2         # 比规则 0.15 高一档，导入后 EDA 的 DRC 才过
+boundary_inset_mm = 0.15
+edge_clearance_um = 450           # 铜离板边 >= 0.45 mm（600 以上常布不通）
+passes = 100
+workers = 4
+
+# 每个 variant 并行跑一次。via 是过孔代价（默认 50，低于 50 过孔暴增）；top/bot = [顺向, 逆向] 代价。
+[[boards.main.route.variants]]
+id = "base"
+via = 50
+
+[[boards.main.route.variants]]
+id = "fewer-vias"
+via = 70
+top = [1.0, 2.1]
+bot = [3.5, 4.5]                  # 底层代价高 -> 信号少走底层，底层铺铜更完整
+top_dir = "horizontal"
+bot_dir = "horizontal"
+
+[boards.main.ground]              # pour_gnd.py / stitch.py / gmetrics.py
+net = "GND"
+pour_inset_mm = 0.3
+stitch_grid_mm = 4
+
+[boards.main.fab]                 # kit/fab
+name = "main_v1"                  # 导出文件名前缀
+layers = 2

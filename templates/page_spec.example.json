@@ -1,0 +1,20 @@
+{
+ "page": "<原理图页 UUID>",
+ "name": "main_p2_power",
+ "power": ["5V", "3V3"],
+ "ground": ["GND"],
+ "parts": [
+  {"ref": "J1", "lcsc": "C2316", "x": 200, "y": 600, "rot": 0,
+   "nets": {"1": "5V", "2": "GND", "3": "UART_TX"}, "nc": []},
+  {"ref": "U1", "lcsc": "C6186", "x": 540, "y": 600, "rot": 0,
+   "nets": {"VIN": "5V", "VOUT*": "3V3", "GND": "GND"}},
+  {"ref": "C1", "lcsc": "C15850", "x": 440, "y": 600, "rot": 90,
+   "nets": {"1": "5V", "2": "GND"}},
+  {"ref": "C2", "lcsc": "C15850", "x": 640, "y": 600, "rot": 90,
+   "nets": {"1": "3V3", "2": "GND"}},
+  {"ref": "R1", "lcsc": "C25744", "x": 300, "y": 450, "rot": 0,
+   "nets": {"1": "UART_TX", "2": "MCU_TX"}},
+  {"ref": "U2", "lib": "<库 UUID>", "uuid": "<器件 UUID，不是符号 UUID>", "x": 800, "y": 450,
+   "nets": {"VCC*": "3V3", "GND*": "GND", "TX": "MCU_TX"}, "nc": ["5", "6"]}
+ ]
+}
