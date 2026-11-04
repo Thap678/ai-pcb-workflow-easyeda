@@ -1,4 +1,4 @@
-# CPython 3.12（原 .pyc 的 cpython-312 标签可证）
+# Python 3.11+ (tomllib). Tested on CPython 3.12.10, Windows 11.
 shapely>=2.0
 numpy>=1.26
 scipy>=1.11
