@@ -22,7 +22,7 @@ python tools/check_env.py            # 全部 OK 才往下走；daemon 没起：
 ```
 
 - 用户在 EDA 里建好空工程（每块板一个 Board），保持打开。
-- 复制 `board.example.toml` 为 `board.toml`，按 `easyeda doc ls --project <工程名>` 和工程文件 `.eprj3` 填 UUID。
+- 复制 `board.example.toml` 为 `board.toml`，按 `easyeda doc ls --project <工程名>` 和工程文件 `.eprj3` 填 UUID。工程 UUID 以 `easyeda health` 当前显示的为准（重新打开后可能变），`check_env.py` 会核对。
 - 所有 kit 脚本读 `board.toml`（或 `--cfg <路径>` / 环境变量 `KIT_CFG`），多块板用 `--board <名字>`。
 
 ## 阶段 1：需求与方案（docs/01）

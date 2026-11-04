@@ -26,7 +26,9 @@ def spacing(base, zone, slot, slot_zone, outline, outline_zone, hole, hole_zone)
         z = 'Copper/Plane Zone' in pair
         if 'Hole' in pair: return hole_zone if z else hole
         if 'Board Outline' in pair: return outline_zone if z else outline
-        if 'Slot Region' in pair: return slot_zone if z else slot
+        if 'Slot Region' in pair:              # discrete copper vs slot: slot; slot vs slot/line/text/pour: slot_zone
+            other = ROWS[c] if ROWS[r] == 'Slot Region' else ROWS[r]
+            return slot if other in ROWS[:7] else slot_zone
         if z: return zone
         if pair & {'Line', 'Text/Image'}: return 0.15
         return base
@@ -44,7 +46,7 @@ s['copperThickness1oz']['tables']['1']['content'] = spacing(
     R['copper_mm'], R['pour_mm'], R['slot_copper_mm'], R['slot_pour_mm'], R['edge_mm'], R['edge_pour_mm'],
     R['hole_mm'], R['hole_pour_mm'])
 s['copperThickness2oz']['tables']['1']['content'] = spacing(       # 2 oz: one step stricter everywhere
-    max(0.2, R['copper_mm']), R['pour_mm'] + 0.1, R['slot_copper_mm'], R['slot_pour_mm'], R['edge_mm'],
+    max(0.2, R['copper_mm']), R['pour_mm'] + 0.1, R['slot_pour_mm'], R['slot_pour_mm'], R['edge_mm'],
     max(0.5, R['edge_pour_mm']), R['hole_mm'], R['hole_pour_mm'] + 0.05)
 d['Spacing']['Other Spacing']['otherClearance']['form'].update(
     {'device2device': 0, 'thru2Smd': 0, 'hole2Hole': R['hole_to_hole_mm']})
