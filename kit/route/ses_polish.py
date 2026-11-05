@@ -28,7 +28,7 @@ from shapely.geometry import LineString, Point, Polygon
 from shapely.strtree import STRtree
 
 import sys
-import batch_score as BS
+import dsnses as BS
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import common as K
 
@@ -45,11 +45,7 @@ LAY = {'TopLayer': 1, 'BottomLayer': 2}
 
 def load_dsn(dsn_path):
     dsn = BS.Dsn(dsn_path)
-    root = BS.parse_sexpr(open(dsn_path, encoding='utf-8', errors='replace').read())
-    pnode = BS.child(BS.child(BS.child(root, 'structure'), 'boundary'), 'path')
-    nums = [float(v) for v in pnode[3:]]
-    pts = [(v * dsn.unit_mm, w * dsn.unit_mm) for v, w in zip(nums[0::2], nums[1::2])]
-    board = Polygon(pts).buffer(0)
+    board = Polygon(dsn.outline).buffer(0)
     pads = {1: [], 2: []}
     for p in dsn.pads:
         if p['kind'] == 'circle':

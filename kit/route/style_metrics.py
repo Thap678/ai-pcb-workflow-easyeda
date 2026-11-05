@@ -10,8 +10,10 @@ Rules -> measurable proxies (all signal nets only; GND is a pour helper and is e
   R6 even bundles           parallel neighbours at 0.2-0.8 mm pitch  -> bundle_pairs, bundle_spacing_cv
 
 usage:
-  python style_metrics.py <x.ses> [--dsn boardR_prep.dsn] [--json out.json]
-  python style_metrics.py --compare round3 round4 round5        # rank every valid SES of those rounds
+  python style_metrics.py <x.ses> --dsn <prepared.dsn> [--json out.json]
+  python style_metrics.py --compare route_runs/<board> [<more route.py folders> ...]
+                          # rank every <id>/out.ses (geometry: <id>/in.dsn); with a ranking.json from
+                          # batch_score.py --batch only its usable variants
 """
 import argparse
 import collections
@@ -23,23 +25,18 @@ import sys
 
 from shapely.geometry import LineString, Point, Polygon
 
-import batch_score as BS
+import dsnses as BS
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-DSN = os.path.join(HERE, 'boardR_prep.dsn')
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import common as K
-M3 = [tuple(map(float, h)) for h in K.board().holes]      # mounting holes (mm)
-M3_R = K.board().hole_d / 2                             # cut-out radius (mm)
+_B = K.board()
+GND = _B.gnd                                             # excluded: the ground net is poured, not styled
+M3 = [tuple(map(float, h)) for h in _B.holes]            # mounting holes (mm)
+M3_R = _B.hole_d / 2                                     # cut-out radius (mm)
 
 
-def board_polygon(dsn_path=DSN):
-    root = BS.parse_sexpr(open(dsn_path, encoding='utf-8', errors='replace').read())
-    dsn = BS.Dsn(dsn_path)
-    pnode = BS.child(BS.child(BS.child(root, 'structure'), 'boundary'), 'path')
-    nums = [float(v) for v in pnode[3:]]
-    pts = [(v * dsn.unit_mm, w * dsn.unit_mm) for v, w in zip(nums[0::2], nums[1::2])]
-    return Polygon(pts).buffer(0)
+def board_polygon(dsn_path):
+    return Polygon(BS.Dsn(dsn_path).outline).buffer(0)
 
 
 def _ang(a, b, c):
@@ -54,11 +51,11 @@ def _ang(a, b, c):
     return math.degrees(math.acos(cos))
 
 
-def metrics(ses_path, dsn_path=DSN, board=None):
+def metrics(ses_path, dsn_path, board=None):
     board = board or board_polygon(dsn_path)
     edge = board.exterior
     ses = BS.Ses(ses_path)
-    sig = [w for w in ses.wires if w['net'] != 'GND']
+    sig = [w for w in ses.wires if w['net'] != GND]
     total_len = sum(w['length'] for w in sig)
 
     # R1 sharp corners
@@ -167,10 +164,9 @@ def metrics(ses_path, dsn_path=DSN, board=None):
     return m
 
 
-def compare(rounds):
+def compare(roots):
     rows = []
-    for r in rounds:
-        root = os.path.join(HERE, 'batch_runs', f'round{r}')
+    for root in roots:
         rj = os.path.join(root, 'ranking.json')
         ok = set()
         if os.path.exists(rj):
@@ -183,7 +179,7 @@ def compare(rounds):
             if not os.path.exists(ses) or (ok and name not in ok):
                 continue
             try:
-                rows.append(metrics(ses))
+                rows.append(metrics(ses, os.path.join(root, name, 'in.dsn')))
             except Exception as e:                          # noqa: BLE001
                 print('skip', name, e)
     rows.sort(key=lambda m: -m['style'])
@@ -200,15 +196,15 @@ def compare(rounds):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('ses', nargs='?')
-    ap.add_argument('--dsn', default=DSN)
+    ap.add_argument('--dsn', default=None, help='the prepared DSN the SES was routed from')
     ap.add_argument('--json', default=None)
-    ap.add_argument('--compare', nargs='+', type=int, default=None)
+    ap.add_argument('--compare', nargs='+', default=None, help='route.py output folders')
     a = ap.parse_args()
     if a.compare:
         compare(a.compare)
         return
-    if not a.ses:
-        ap.error('give a .ses or --compare 3 4 5')
+    if not a.ses or not a.dsn:
+        ap.error('give <x.ses> --dsn <prepared.dsn>, or --compare route_runs/<board>')
     m = metrics(a.ses, a.dsn)
     if a.json:
         json.dump(m, open(a.json, 'w', encoding='utf-8'), indent=1)

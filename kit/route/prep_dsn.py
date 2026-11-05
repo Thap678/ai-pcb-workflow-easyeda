@@ -5,7 +5,8 @@ usage: python prep_dsn.py <exported.dsn> <out.dsn>
   SES import), class members unquoted so the per-net track classes apply
 - mounting-hole pads grown so copper stays >= rules.slot_pour_mm from the hole edge; other netless holes (locating
   pegs, mounting lugs) grown so copper stays >= rules.slot_copper_mm (keepout areas crash freerouting-cli)
-- routing boundary inset [route] boundary_inset_mm (0.15) so copper ends inset + clearance from the board edge
+- routing boundary = the exported board outline (any shape) inset by [route] boundary_inset_mm (0.15), so copper
+  ends inset + clearance from the board edge
 """
 import os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -22,7 +23,6 @@ if len(images) != 1 or len(places) != 1 or [float(v) for v in places[0][1:3]] !=
                      'board image placed at 0 0 (the EasyEDA export); check the EasyEDA / easyeda-agent version')
 comp = places[0][0]
 MIL = K.MIL
-W, H = B.w * MIL, B.h * MIL
 CLR_MM = B.route.get('router_clearance_mm', 0.2)
 CLR = round(CLR_MM * MIL, 2)
 
@@ -33,12 +33,15 @@ s, nq = re.subn(r"\(class (\S+) '([^']+)'", r'(class \1 \2', s)
 assert nq > 0, 'no quoted class members found'
 s = re.sub(r'\(rule\(clear [\d.]+', f'(rule(clear {CLR}', s)
 
-i, ch = B.route.get('boundary_inset_mm', 0.15) * MIL, B.corner * MIL          # inset, corner chamfer
-pts = [(i + ch, i), (W - i - ch, i), (W - i, i + ch), (W - i, H - i - ch), (W - i - ch, H - i), (i + ch, H - i),
-       (i, H - i - ch), (i, i + ch), (i + ch, i)]
+# the export's boundary is the board outline (mil, arcs as segments): shrink that shape, whatever it is
+m = re.search(r'\(boundary\(path signal 0 ([^)]*)\)\s*\)', s)
+assert m, 'boundary not found'
+v = [float(t) for t in m.group(1).split()]
+inset = B.route.get('boundary_inset_mm', 0.15)
+pts = K.inset_polygon([(x * K.MM, y * K.MM) for x, y in zip(v[0::2], v[1::2])], inset)
+pts = [(x * MIL, y * MIL) for x, y in pts + pts[:1]]
 boundary = '(boundary(path signal 0 ' + ' '.join(f'{x:.2f} {y:.2f}' for x, y in pts) + ' ))'
-s, n = re.subn(r'\(boundary\(path signal 0 [^)]*\)\s*\)', boundary, s, count=1)
-assert n == 1, 'boundary not found'
+s = s[:m.start()] + boundary + s[m.end():]
 
 # EasyEDA exports each mounting cut-out as a netless pad of the bare hole radius. Grow it so that
 # grown radius + router clearance = hole radius + slot_pour_mm. (keepout areas crash the native freerouting-cli)

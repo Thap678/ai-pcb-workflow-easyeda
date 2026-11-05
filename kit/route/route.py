@@ -17,7 +17,7 @@ import common as K
 
 B = K.board()
 RC = B.route
-FR = RC.get('freerouting') or os.environ.get('FR_EXE') or r'C:\fr_extract\freerouting\freerouting.exe'
+FR = B.freerouting()
 DEF = dict(fanout='on', plane_via=5, ripup=100, passes=RC.get('passes', 100), via=50, top=[1.0, 2.1], bot=[1.0, 2.1],
            top_dir='horizontal', bot_dir='vertical')
 LOG_STAGE = re.compile(r'Auto-routing stage completed:.*?final score:\s*([\d.]+)\s*\((\d+) unrouted and (\d+) violations\)')

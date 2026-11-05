@@ -48,7 +48,9 @@ for ref, r in plan.items():
         x0, y0, x1, y1, _ = ext[ref]
         if abs((x0 + x1) / 2 - float(r['x_mm'])) > 0.05 or abs((y0 + y1) / 2 - float(r['y_mm'])) > 0.05:
             off.append((ref, round((x0 + x1) / 2, 2), round((y0 + y1) / 2, 2)))
-outside = [r for r, (x0, y0, x1, y1, _) in ext.items() if x0 < 0 or y0 < 0 or x1 > B.w or y1 > B.h]
+from shapely.geometry import Polygon, box
+edge = Polygon(K.outline_mm()).buffer(0)                # the real outline (falls back to the config shape)
+outside = [r for r, (x0, y0, x1, y1, _) in ext.items() if not edge.contains(box(x0, y0, x1, y1))]
 keep = B.hole_d / 2 + 1.0                        # hole radius + 1 mm keep-out
 on_hole = [r for r, (x0, y0, x1, y1, _) in ext.items()
            if any(x0 - keep < hx < x1 + keep and y0 - keep < hy < y1 + keep for hx, hy in B.holes)]

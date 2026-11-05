@@ -7,7 +7,7 @@ by the polish, not by the router.
 """
 import collections, sys
 from shapely.geometry import LineString, Point, Polygon
-import batch_score as BS
+import dsnses as BS
 
 dsn, ses = BS.Dsn(sys.argv[1]), BS.Ses(sys.argv[2])
 items = collections.defaultdict(list)                  # net -> [(layer, geom, pin or None)]
