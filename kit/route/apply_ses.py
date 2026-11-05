@@ -38,8 +38,15 @@ for k in range(0, len(need), 40):
 bad = 0
 for _, net, L, w, (x1, y1), (x2, y2) in need:
     r = run(['pcb', 'track', '--x1', str(x1), '--y1', str(y1), '--x2', str(x2), '--y2', str(y2),
-             '--layer', str(L), '--width', f'{w:.3f}', '--net', net], tries=2)
+             '--layer', str(L), '--width', f'{w:.3f}', '--net', net])
     bad += not r.get('ok')
-print('restored', len(need) - bad, 'failed', bad, '| save', run(['pcb', 'save']).get('ok'))
-K.dump(ses_path + '.imported.json')
+print('restored', len(need) - bad, 'reported failed', bad, '| save', run(['pcb', 'save']).get('ok'))
+d = K.dump(ses_path + '.imported.json')
+# read back: a "failed" track may have landed (and is not resent), so count what is on the board now
+idx = {}
+for l in d['copper']['lines']:
+    idx.setdefault(key(l['net'], l['layer'], (l['startX'], l['startY']), (l['endX'], l['endY'])), []).append(l)
+got = [len([l for l in idx.get(key(net, L, a, b), []) if abs(l['lineWidth'] - w) <= 0.05]) for _, net, L, w, a, b in need]
+print('read back: missing', got.count(0), '| duplicated', sum(g > 1 for g in got),
+      '(rerun only for missing ones; conn.py below shows whether they matter)')
 subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'conn.py'), ses_path + '.imported.json'])

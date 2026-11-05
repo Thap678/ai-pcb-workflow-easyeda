@@ -13,6 +13,14 @@ import common as K
 B = K.board()
 src, out = sys.argv[1], sys.argv[2]
 s = open(src, encoding='utf-8').read()
+# EasyEDA exports the whole board as ONE image (named u1 so far) placed once at 0 0, every pad a pin of it with a
+# unique name; the hole-pad lookup (pin coordinates = board coordinates) and the netted-pin test rely on that.
+images = re.findall(r'\(image (\S+)', s)
+places = re.findall(r'\(place (\S+) ([\d.-]+) ([\d.-]+) (\S+) ([\d.-]+)', s)
+if len(images) != 1 or len(places) != 1 or [float(v) for v in places[0][1:3]] != [0, 0] or float(places[0][4]) != 0:
+    raise SystemExit(f'unexpected DSN layout: images {images[:5]}, placements {places[:5]} - prep_dsn.py expects one '
+                     'board image placed at 0 0 (the EasyEDA export); check the EasyEDA / easyeda-agent version')
+comp = places[0][0]
 MIL = K.MIL
 W, H = B.w * MIL, B.h * MIL
 CLR_MM = B.route.get('router_clearance_mm', 0.2)
@@ -48,7 +56,7 @@ for ps in hole_ps:
     s = s[:a] + re.sub(r'(\(polygon \S+ )([^)]*)\)', grow, s[a:b]) + s[b:]
 # Other netless plated/non-plated holes (switch locating pegs, encoder mounting lugs) count as slot regions in the
 # EasyEDA rules (slot_copper_mm). Grow them so growth + router clearance >= slot_copper_mm.
-net_pins = set(re.findall(r'u1-(\S+?)[\s)]', s[s.index('(network'):]))
+net_pins = set(re.findall(rf'\b{re.escape(comp)}-(\S+?)[\s)]', s[s.index('(network'):]))
 G = max(0.0, B.rules.get('slot_copper_mm', 0.3) - CLR_MM) * MIL
 grown = set()
 all_pins = re.findall(r'\(pin (\S+) (\S+) ([\d.-]+) ([\d.-]+)\)', s)
