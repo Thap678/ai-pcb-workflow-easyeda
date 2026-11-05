@@ -44,5 +44,5 @@ if '--apply' in sys.argv and fix:
     bad = 0
     for _, net, L, w, (x1, y1), (x2, y2), _ in fix:
         bad += not run(['pcb', 'track', '--x1', str(x1), '--y1', str(y1), '--x2', str(x2), '--y2', str(y2),
-                        '--layer', str(L), '--width', str(w), '--net', net], tries=2).get('ok')
+                        '--layer', str(L), '--width', str(w), '--net', net]).get('ok')
     print('re-widthed', len(fix) - bad, 'failed', bad, '| save', run(['pcb', 'save']).get('ok'))

@@ -87,13 +87,33 @@ def parse(stdout):
         return None
 
 
-def run(args, tries=4, doc=True, timeout=600, board_=None):
-    """easyeda --project <P> [--doc <PCB>] <args>, retried on empty/garbled replies.
+# Commands that may be resent when a reply is lost: reads, and writes that set an absolute state (save, move to a
+# position, lock, delete by id, replace the rules / outline), where a second copy changes nothing. Everything else
+# - track, via, slot, pour, import-autoroute, debug exec, any command not listed - creates something and is sent once:
+# a reply that never came may hide a write that landed, so the caller reads back before sending it again.
+# `pcb drc` is a read but is sent once too: each retry piles another recompute onto the EasyEDA webview.
+RETRY_SAFE = {
+    'pcb list', 'pcb dump', 'pcb drc-rules', 'pcb pour-list', 'pcb track-list', 'pcb via-list',
+    'pcb outline-get', 'pcb nets', 'pcb fill list', 'sch list', 'lib by-lcsc', 'lib search', 'doc ls',
+    'pcb save', 'sch save', 'pcb pour-rebuild', 'pcb modify', 'pcb lock', 'pcb rip-up', 'pcb pour-delete',
+    'pcb track-delete', 'pcb via-delete', 'sch prim-delete', 'pcb drc-rules-set', 'pcb outline-round',
+}
+
+
+def retry_safe(args):
+    """True when `args` (the command after --project/--doc) is in RETRY_SAFE; `pcb fill` is keyed by its subcommand."""
+    return ' '.join(args[:3] if args[:2] == ['pcb', 'fill'] else args[:2]) in RETRY_SAFE
+
+
+def run(args, tries=None, doc=True, timeout=600, board_=None):
+    """easyeda --project <P> [--doc <PCB>] <args>; reads are retried on empty/garbled replies, creates are not.
 
     doc=True pins the board's PCB, doc=False adds nothing, a string pins that document (page / PCB uuid).
-    The connector sometimes reports a failure for a write that landed (and vice versa): callers that write
-    should read back instead of trusting `ok`.
+    tries=None: 4 for commands in RETRY_SAFE, 1 for everything else. The connector sometimes reports a failure
+    for a write that landed (and vice versa): callers that write should read back instead of trusting `ok`.
     """
+    if tries is None:
+        tries = 4 if retry_safe(args) else 1
     B = board_ or board()
     pre = ['easyeda', '--project', B.project]
     if doc is True:
@@ -131,9 +151,10 @@ def dump(path, doc=None):
     return load_dump(path)
 
 
-def js(code, timeout=60, doc=True):
-    """Run eda.* JavaScript in the connector (debug exec) and return its value."""
-    d = run(['debug', 'exec', '--timeout', str(timeout), '--code', code], tries=1, doc=doc, timeout=timeout + 30)
+def js(code, timeout=60, doc=True, tries=1):
+    """Run eda.* JavaScript in the connector (debug exec) and return its value. Sent once; pass tries > 1 only for
+    code that just reads."""
+    d = run(['debug', 'exec', '--timeout', str(timeout), '--code', code], tries=tries, doc=doc, timeout=timeout + 30)
     if not d.get('ok'):
         raise SystemExit('debug exec failed: ' + json.dumps(d.get('error'), ensure_ascii=False)[:400])
     return d['result']['value']
