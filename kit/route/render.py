@@ -10,16 +10,18 @@ Measured on this board: base build ~20 ms, per-variant composite ~15-40 ms at 16
 (1280x1392), i.e. millisecond-scale per frame.
 
 Sources
-  --dsn   boardR_prep.dsn          unrouted board: outline from (structure boundary), pads from (library)
-  --dump  board6_*.json            EDA `pcb dump --include-copper` snapshot: outline, pads, pours, copper
+  --dsn   prep.dsn                 unrouted board: outline from (structure boundary), pads from (library)
+  --dump  final_dump.json          EDA `pcb dump --include-copper` snapshot: outline, pads, pours, copper
   --ses   <run>/out.ses            Freerouting copper overlay (tracks + vias)
-  --batch <round dir> [--top N]    render every <round>/<id>/out.ses and a contact sheet
+  --batch route_runs/<board>       render every <id>/out.ses (best first when batch_score.py --batch wrote
+          [--top N]                ranking.json there) and a contact sheet
   --bench                          print timings
+The ground net (drawn dimmed) is [ground] net from the config, GND without one.
 
 Examples
-  python fast_render.py --dsn boardR_prep.dsn --ses batch_runs/round3/r3-03/out.ses --out r3-03.png
-  python fast_render.py --dump board6_r2-02_final2.json --out board_final.png
-  python fast_render.py --dsn boardR_prep.dsn --batch batch_runs/round3 --top 6 --out-dir renders/round3
+  python render.py --dsn prep.dsn --ses route_runs/main/base/out.ses --out base.png
+  python render.py --dump final_dump.json --out board.png
+  python render.py --dsn prep.dsn --batch route_runs/main --top 6
 """
 import argparse
 import json
@@ -31,7 +33,12 @@ import time
 
 from PIL import Image, ImageDraw, ImageFont
 
-import batch_score as BS          # reuse the tested DSN / SES parsers (S-expression, mil -> mm)
+import dsnses as BS               # the shared DSN / SES parsers (S-expression, mil -> mm)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import common as K
+_B = K.try_board()
+GND = _B.gnd if _B else 'GND'
+NAME = _B.name if _B else ''
 
 # ----------------------------------------------------------------------------- palette
 BG = (12, 15, 20)
@@ -107,15 +114,8 @@ class Raster:
 # ----------------------------------------------------------------------------- static base
 def base_from_dsn(path, pxmm):
     """Unrouted board: outline + drills + pads (one raster reused by every SES variant)."""
-    root = BS.parse_sexpr(open(path, encoding='utf-8', errors='replace').read())
     dsn = BS.Dsn(path)
-
-    structure = BS.child(root, 'structure')
-    bnd = BS.child(structure, 'boundary')
-    # (boundary(path signal 0 x1 y1 x2 y2 ...)) -- drop the 'path' / 'signal' / layer-id tokens
-    pnode = BS.child(bnd, 'path')
-    nums = [float(v) for v in pnode[3:]]
-    outline = [(v * dsn.unit_mm, w * dsn.unit_mm) for v, w in zip(nums[0::2], nums[1::2])]
+    outline = dsn.outline
     W = max(p[0] for p in outline)
     H = max(p[1] for p in outline)
     R = Raster(W, H, pxmm)
@@ -215,10 +215,10 @@ def draw_ses(img, R, ses, gnd_dim=True):
     top = bot = 0
     for w in ses.wires:
         if w['layer'] == 'TopLayer':
-            col = TRACK_GND if (gnd_dim and w['net'] == 'GND') else TRACK_TOP
+            col = TRACK_GND if (gnd_dim and w['net'] == GND) else TRACK_TOP
             top += 1
         else:
-            col = TRACK_GND if (gnd_dim and w['net'] == 'GND') else TRACK_BOT
+            col = TRACK_GND if (gnd_dim and w['net'] == GND) else TRACK_BOT
             bot += 1
         width = max(1, int(round(w['width'] * R.s)))
         pts = R.pt(w['pts'])
@@ -230,7 +230,7 @@ def draw_ses(img, R, ses, gnd_dim=True):
     for v in ses.vias:
         x, y = R.p(v['x'], v['y'])
         r = R.r(ses.via_diam / 2)
-        col = VIA_GND if (gnd_dim and v['net'] == 'GND') else VIA_SIG
+        col = VIA_GND if (gnd_dim and v['net'] == GND) else VIA_SIG
         d.ellipse([x - r, y - r, x + r, y + r], fill=col, outline=(20, 24, 28))
         h = max(1, r // 2)
         d.ellipse([x - h, y - h, x + h, y + h], fill=DRILL)
@@ -244,13 +244,13 @@ def draw_dump_copper(img, R, dump_path):
     out = img.copy()
     d = ImageDraw.Draw(out)
     for l in d0['copper']['lines']:
-        col = TRACK_GND if l['net'] == 'GND' else (TRACK_TOP if l['layer'] == 1 else TRACK_BOT)
+        col = TRACK_GND if l['net'] == GND else (TRACK_TOP if l['layer'] == 1 else TRACK_BOT)
         w = max(1, int(round(l['lineWidth'] * K * R.s)))
         d.line([R.p(l['startX'] * K, l['startY'] * K), R.p(l['endX'] * K, l['endY'] * K)], fill=col, width=w)
     for v in d0['copper']['vias']:
         x, y = R.p(v['x'] * K, v['y'] * K)
         r = R.r((v.get('diameter') or 24) * K / 2)
-        col = VIA_GND if v['net'] == 'GND' else VIA_SIG
+        col = VIA_GND if v['net'] == GND else VIA_SIG
         d.ellipse([x - r, y - r, x + r, y + r], fill=col, outline=(20, 24, 28))
     return out, dict(tracks=len(d0['copper']['lines']), vias=len(d0['copper']['vias']))
 
@@ -267,7 +267,7 @@ def chrome(img, title, sub, stats):
     y = img.height - f2.size - 8
     x = 10
     for label, col in (("TopLayer", TRACK_TOP), ("BottomLayer", TRACK_BOT),
-                       ("GND", TRACK_GND), ("signal via", VIA_SIG), ("GND via", VIA_GND)):
+                       (GND, TRACK_GND), ("signal via", VIA_SIG), (f"{GND} via", VIA_GND)):
         d.ellipse([x, y + f2.size // 2 - 4, x + 8, y + f2.size // 2 + 4], fill=col)
         d.text((x + 12, y), label, fill=DIM, font=f2)
         x += 12 + d.textlength(label, font=f2) + 14
@@ -319,7 +319,7 @@ def main():
         t1 = time.perf_counter()
         img, st = draw_dump_copper(base, R, a.dump)
         t_frame = time.perf_counter() - t1
-        title = a.title or f"PCB6  {os.path.basename(a.dump)}"
+        title = a.title or f"{NAME}  {os.path.basename(a.dump)}".strip()
         sub = f"{meta['W']:.0f} x {meta['H']:.0f} mm   {a.pxmm} px/mm"
         img = chrome(img, title, sub, st)
         if a.bench:
@@ -339,7 +339,7 @@ def main():
         ses = BS.Ses(a.ses)
         img, st = draw_ses(base, R, ses)
         t_frame = time.perf_counter() - t1
-        title = a.title or f"PCB6  {os.path.basename(os.path.dirname(os.path.abspath(a.ses)))}"
+        title = a.title or f"{NAME}  {os.path.basename(os.path.dirname(os.path.abspath(a.ses)))}".strip()
         sub = (f"{meta['W']:.0f} x {meta['H']:.0f} mm   tracks {st['top']} top / {st['bottom']} bottom"
                f"   vias {st['vias']}")
         img = chrome(img, title, sub, st)

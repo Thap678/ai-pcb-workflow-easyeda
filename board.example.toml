@@ -15,6 +15,9 @@ schematic = "<原理图文档 UUID>"
 width_mm = 80
 height_mm = 60
 corner_mm = 3                     # 板框圆角
+# 异形板：写 outline_mm（mm，原点左下，圆弧拆成短线段），outline.py 用它代替 width x height 圆角矩形；
+# width_mm / height_mm 仍然要写，填外框的包围盒。铺地和布线边界都按 EDA 里的真实板框内缩，不再假设矩形。
+# outline_mm = [[0, 0], [80, 0], [80, 40], [50, 60], [0, 60]]
 mount_holes_mm = [[4, 4], [76, 4], [4, 56], [76, 56]]   # 安装孔圆心；没有就写 []
 mount_hole_d_mm = 3.2             # M3 = 3.2
 

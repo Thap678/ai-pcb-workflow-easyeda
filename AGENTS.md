@@ -67,6 +67,8 @@ python kit/backup.py before-route
 easyeda --project <P> --doc <PCB> pcb export-dsn --name board.dsn   # 文件在 .easyeda/artifacts/
 python kit/route/prep_dsn.py <导出的.dsn> prep.dsn
 python kit/route/route.py prep.dsn                        # 配置里的多个参数版本并行；看排名
+python kit/route/batch_score.py --batch route_runs/<板>    # 离线打分（地面/过孔/线长）-> ranking.md
+python kit/route/render.py --dsn prep.dsn --batch route_runs/<板> --top 3   # 前几名的图 + 拼图
 python kit/route/ses_conn.py prep.dsn route_runs/<板>/<最好的id>/out.ses   # 0 open nets
 python kit/route/ses_polish.py <out.ses> --dsn prep.dsn --chamfer 0 --out final.ses
 python kit/route/ses_conn.py prep.dsn final.ses           # 后处理后仍是 0 open nets

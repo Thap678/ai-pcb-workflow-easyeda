@@ -1,9 +1,11 @@
-"""Board outline (rounded rectangle) + round mounting-hole cut-outs from the config, then save. Safe to re-run.
+"""Board outline + round mounting-hole cut-outs from the config, then save. Safe to re-run.
 
 usage: python outline.py [--board <name>]          (geometry: width_mm / height_mm / corner_mm / mount_holes_mm)
+The outline is the width x height rectangle with corner_mm rounding, or the outline_mm polygon when the config
+gives one (any shape, mm, origin lower-left; sample arcs into short segments).
 Run before placement and routing: changing the outline after copper exists can strand it.
 
-outline-round replaces the outline, so re-running it is harmless. Holes are cut-outs (fills on the MULTI layer 12)
+outline-round / outline-set replace the outline, so re-running them is harmless. Holes are cut-outs (fills on the MULTI layer 12)
 that pile up when created twice, so the existing cut-outs are read first and a hole is cut only where none is; after
 cutting, the board is read again and each configured hole must have exactly one cut-out. Cut-outs that match no
 configured hole (an antenna slot, a hole from an older config) are listed and left alone.
@@ -33,8 +35,12 @@ def matches(hole, cuts):
             and abs(b[2] - b[0] - B.hole_d) < TOL_D and abs(b[3] - b[1] - B.hole_d) < TOL_D]
 
 
-d = K.run(['pcb', 'outline-round', '--rect', f'0,0,{B.w * M:.3f},{B.h * M:.3f}', '--radius', f'{B.corner * M:.3f}'])
-print('outline', B.w, 'x', B.h, 'mm, corner', B.corner, '->', d.get('ok'), d.get('error') or '')
+if B.outline:
+    d = K.run(['pcb', 'outline-set', '--points', json.dumps([[round(x * M, 3), round(y * M, 3)] for x, y in B.outline])])
+    print('outline polygon', len(B.outline), 'points ->', d.get('ok'), d.get('error') or '')
+else:
+    d = K.run(['pcb', 'outline-round', '--rect', f'0,0,{B.w * M:.3f},{B.h * M:.3f}', '--radius', f'{B.corner * M:.3f}'])
+    print('outline', B.w, 'x', B.h, 'mm, corner', B.corner, '->', d.get('ok'), d.get('error') or '')
 
 cuts = cutouts() if B.holes else []
 blind = [i for i, b in cuts if b is None]

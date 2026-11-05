@@ -15,7 +15,7 @@ import common as K
 import gndconn_lib as G
 
 B = K.board()
-NET = B.ground.get('net', 'GND')
+NET = B.gnd
 path = sys.argv[1]
 grid = float(sys.argv[2]) if len(sys.argv) > 2 and not sys.argv[2].startswith('--') else B.ground.get('stitch_grid_mm', 4.0)
 items, groups = G.islands(path, NET)
@@ -53,10 +53,11 @@ for g in groups[1:]:
         if free(p, 1.0): plan.append(p); tied += 1; break
 both = main_L[1].buffer(-M).intersection(main_L[2].buffer(-M))
 n_grid = 0
+x1, y1 = both.bounds[2:] if not both.is_empty else (0, 0)   # grid from the origin over the poured area, any shape
 x = grid / 2
-while x < B.w:
+while x < x1:
     y = grid / 2
-    while y < B.h:
+    while y < y1:
         p = Point(x, y)
         if both.contains(p) and free(p): plan.append(p); n_grid += 1
         y += grid

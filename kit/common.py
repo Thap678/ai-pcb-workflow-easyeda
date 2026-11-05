@@ -18,6 +18,8 @@ KIT = os.path.dirname(os.path.abspath(__file__))
 def _pop_flag(name):
     if name in sys.argv:
         i = sys.argv.index(name)
+        if i + 1 >= len(sys.argv):
+            raise SystemExit(f'{name} needs a value')
         val = sys.argv[i + 1]
         del sys.argv[i:i + 2]
         return val
@@ -38,8 +40,54 @@ def cfg():
             raise SystemExit(f'board config not found: {_CFG_PATH} (copy board.example.toml, or pass --cfg / set KIT_CFG)')
         with open(_CFG_PATH, 'rb') as f:
             _cfg = tomllib.load(f)
+        for w in check_keys(_cfg):
+            print(f'config warning ({os.path.basename(_CFG_PATH)}): {w}', file=sys.stderr)
         _cfg['_dir'] = os.path.dirname(os.path.abspath(_CFG_PATH))
     return _cfg
+
+
+# Every key the kit reads (board.example.toml documents them). A key not listed is a typo or a stale option and
+# would otherwise be ignored in silence, the default taking its place.
+KEYS = {
+    '': {'project', 'project_dir', 'default_board', 'backup', 'boards'},
+    'backup': {'dir'},
+    'board': {'pcb', 'schematic', 'width_mm', 'height_mm', 'corner_mm', 'outline_mm', 'mount_holes_mm',
+              'mount_hole_d_mm', 'pages', 'rules', 'track_classes', 'route', 'ground', 'fab'},
+    'rules': {'copper_mm', 'pour_mm', 'slot_copper_mm', 'slot_pour_mm', 'edge_mm', 'edge_pour_mm', 'hole_mm',
+              'hole_pour_mm', 'track_default_mm', 'track_min_mm', 'via_d_mm', 'via_hole_mm', 'hole_to_hole_mm'},
+    'track_classes': {'name', 'min_mm', 'default_mm', 'nets'},
+    'route': {'freerouting', 'router_clearance_mm', 'boundary_inset_mm', 'edge_clearance_um', 'passes', 'workers',
+              'timeout_s', 'variants'},
+    'variants': {'id', 'via', 'top', 'bot', 'top_dir', 'bot_dir', 'plane_via', 'ripup', 'fanout', 'passes', 'note'},
+    'ground': {'net', 'pour_inset_mm', 'stitch_grid_mm'},
+    'fab': {'name', 'layers'},
+}
+REQUIRED_BOARD = ('pcb', 'width_mm', 'height_mm')
+
+
+def check_keys(c):
+    """Problems in a parsed config: unknown keys (typos), missing required ones, wrong table types."""
+    out = []
+    def unknown(d, kind, where):
+        if not isinstance(d, dict):
+            out.append(f'{where or "top level"}: expected a table'); return
+        out.extend(f'unknown key {where + "." if where else ""}{k}' for k in d if k not in KEYS[kind] and k != '_dir')
+    unknown(c, '', '')
+    if 'project' not in c: out.append('missing key project')
+    unknown(c.get('backup', {}), 'backup', 'backup')
+    for name, b in (c.get('boards') or {}).items():
+        w = f'boards.{name}'
+        unknown(b, 'board', w)
+        if not isinstance(b, dict): continue
+        out.extend(f'missing key {w}.{k}' for k in REQUIRED_BOARD if k not in b)
+        for kind in ('rules', 'route', 'ground', 'fab'):
+            unknown(b.get(kind, {}), kind, f'{w}.{kind}')
+        for i, tc in enumerate(b.get('track_classes', [])):
+            unknown(tc, 'track_classes', f'{w}.track_classes[{i}]')
+        for i, v in enumerate((b.get('route') or {}).get('variants', [])):
+            unknown(v, 'variants', f'{w}.route.variants[{i}]')
+    if not c.get('boards'): out.append('no [boards.<name>] table')
+    return out
 
 
 class Board:
@@ -50,6 +98,7 @@ class Board:
         self.name, self.project, self.cfg_dir = name, top['project'], top['_dir']
         self.pcb, self.schematic = g('pcb'), g('schematic')
         self.w, self.h, self.corner = g('width_mm'), g('height_mm'), g('corner_mm', 3.0)
+        self.outline = [tuple(p) for p in g('outline_mm', [])]   # optional polygon; else the rounded w x h rectangle
         self.holes = [tuple(h) for h in g('mount_holes_mm', [])]
         self.hole_d = g('mount_hole_d_mm', 3.2)
         self.pages = g('pages', {})                       # spec file -> {page uuid, saved .esch2 path}
@@ -67,6 +116,13 @@ class Board:
         """net -> track rule minimum (mil), from [[track_classes]]."""
         return {n: tc['min_mm'] * MIL for tc in self.track_classes for n in tc.get('nets', [])}
 
+    @property
+    def gnd(self):
+        return self.ground.get('net', 'GND')
+
+    def freerouting(self):
+        return freerouting_exe(self)
+
 
 def board(name=None):
     c = cfg()
@@ -74,6 +130,56 @@ def board(name=None):
     if name not in c['boards']:
         raise SystemExit(f'board {name!r} not in {_CFG_PATH}: {list(c["boards"])}')
     return Board(name, c['boards'][name], c)
+
+
+def try_board():
+    """The configured board, or None when there is no config (offline scripts then use their defaults)."""
+    return board() if os.path.exists(_CFG_PATH) else None
+
+
+FR_DEFAULT = r'C:\fr_extract\freerouting\freerouting.exe'
+
+
+def freerouting_exe(b=None):
+    """Freerouting executable: [route] freerouting in the config, else FR_EXE, else the docs/00 default path."""
+    return (b.route.get('freerouting') if b else None) or os.environ.get('FR_EXE') or FR_DEFAULT
+
+
+def rect_outline(w, h, corner, inset=0.0):
+    """Closed w x h rectangle (mm) inset by `inset`, corners chamfered at `corner` - the fallback board shape."""
+    i, ch = inset, corner
+    return [(i + ch, i), (w - i - ch, i), (w - i, i + ch), (w - i, h - i - ch), (w - i - ch, h - i), (i + ch, h - i),
+            (i, h - i - ch), (i, i + ch)]
+
+
+def outline_mm(dump=None, b=None):
+    """Board outline as [(x, y)] mm (centre line, arcs sampled) from a dump dict, or a fresh outline-only
+    `pcb dump`. Falls back to the configured shape (outline_mm, else the w x h rectangle) and says so: EasyEDA
+    returns no outline when the PCB is not the foreground document."""
+    b = b or board()
+    if dump is None:
+        p = subprocess.run(['easyeda', '--project', b.project, '--doc', b.pcb, 'pcb', 'dump', '--no-silk', '--no-rules',
+                            '--no-layers'], capture_output=True, text=True, encoding='utf-8', errors='replace',
+                           timeout=600)
+        dump = parse(p.stdout) or {}
+        dump = dump.get('result', dump)
+    pts = ((dump or {}).get('outline') or {}).get('points') or []
+    if len(pts) >= 3:
+        return [(x * MM, y * MM) for x, y in pts]
+    print('outline: not readable from EasyEDA (is the PCB the foreground document?) - using the configured shape',
+          file=sys.stderr)
+    return list(b.outline) or rect_outline(b.w, b.h, b.corner)
+
+
+def inset_polygon(pts, d, tol=0.01):
+    """`pts` (mm) shrunk by d mm (round joins keep arcs round), simplified to `tol`; [(x, y)] of the largest piece."""
+    from shapely.geometry import Polygon
+    g = Polygon(pts).buffer(0).buffer(-d, join_style=1).simplify(tol)
+    if g.geom_type == 'MultiPolygon':
+        g = max(g.geoms, key=lambda p: p.area)
+    if g.is_empty:
+        raise SystemExit(f'board outline vanishes when inset by {d} mm')
+    return list(g.exterior.coords)[:-1]
 
 
 def parse(stdout):
@@ -97,6 +203,7 @@ RETRY_SAFE = {
     'pcb outline-get', 'pcb nets', 'pcb fill list', 'sch list', 'lib by-lcsc', 'lib search', 'doc ls',
     'pcb save', 'sch save', 'pcb pour-rebuild', 'pcb modify', 'pcb lock', 'pcb rip-up', 'pcb pour-delete',
     'pcb track-delete', 'pcb via-delete', 'sch prim-delete', 'pcb drc-rules-set', 'pcb outline-round',
+    'pcb outline-set',
 }
 
 

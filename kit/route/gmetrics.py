@@ -9,13 +9,14 @@ import gndconn_lib as G
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import common as K
 _B = K.board()
-NET = _B.ground.get('net', 'GND')
+NET = _B.gnd
 
 path = sys.argv[1]
 items, groups = G.islands(path, NET)
 d = K.load_dump(path)
 cu = d['copper']; MM = G.MM
-board = _B.w * _B.h
+from shapely.geometry import Polygon
+board = Polygon(K.outline_mm(d, _B)).area             # mm2 of the real outline (cover % is relative to it)
 out = {}
 for L in (1, 2):
     pieces = [it[2] for it in items if it[0] == 'pour' and L in it[1]]
