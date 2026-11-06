@@ -33,6 +33,40 @@ s, nq = re.subn(r"\(class (\S+) '([^']+)'", r'(class \1 \2', s)
 assert nq > 0, 'no quoted class members found'
 s = re.sub(r'\(rule\(clear [\d.]+', f'(rule(clear {CLR}', s)
 
+# Exported from a routed board, the DSN still carries the old routing: tracks + vias in (wiring ...) as `protect`,
+# and every via ALSO as a pin of the board image, bound to its net. Freerouting then routes around (and through)
+# the old vias. apply_ses.py rips all of that up before importing, so drop it here.
+i = s.find('(wiring')
+if i >= 0:
+    depth, j = 0, i
+    while True:
+        depth += {'(': 1, ')': -1}.get(s[j], 0)
+        if depth == 0: break
+        j += 1
+    s = s[:i] + s[j + 1:]
+via_d = {re.findall(r'circle \S+ ([\d.]+)', blk)[0] for blk in re.findall(r'\(padstack via\d+\s*\n(.*?)\n    \)', s, re.S)}
+pad_d = {}
+for ps, blk in re.findall(r'\(padstack (\S+)\s*\n(.*?)\n    \)', s, re.S):
+    shapes = re.findall(r'\(shape\((\w+) (\S+) ([\d.]+)', blk)
+    if {sh[1] for sh in shapes} == {'TopLayer', 'BottomLayer'} and all(sh[0] == 'circle' for sh in shapes) \
+            and len({sh[2] for sh in shapes}) == 1:
+        pad_d[ps] = shapes[0][2]
+via_pins = {name for ps, name in re.findall(r'\(pin (\S+) (\S+) [\d.-]+ [\d.-]+\)', s) if pad_d.get(ps) in via_d}
+if via_pins:
+    s = re.sub(r'\n\s*\(pin (\S+) (\S+) [\d.-]+ [\d.-]+\)', lambda m: '' if m.group(2) in via_pins else m.group(0), s)
+    s = re.sub(rf'\s{re.escape(comp)}-(\S+?)(?=[\s)])', lambda m: '' if m.group(1) in via_pins else m.group(0), s)
+# A routed board exports every via size it holds as a via type, e.g. (via via0 via1 via2) for 17.7 / 17.8 / 24 mil.
+# Offered several, Freerouting placed vias that broke clearance (366 via-to-copper shortfalls on a 0.127 mm rule,
+# against 0 when only one type was listed). Keep the one closest to the rule via size.
+vm = re.search(r'\(via ((?:via\d+\s*)+)\)', s)
+if vm and len(vm.group(1).split()) > 1:
+    sizes = {n: float(re.search(r'\(padstack ' + n + r'\s*\n\s*\(shape\(circle \S+ ([\d.]+)', s).group(1))
+             for n in vm.group(1).split()}
+    keep = min(sizes, key=lambda n: abs(sizes[n] - B.rules.get('via_d_mm', 0.45) * MIL))
+    s = s[:vm.start()] + f'(via {keep}\n    )' + s[vm.end():]
+    print('via types', sizes, '-> keep', keep)
+print('old routing dropped:', 'wiring section' if i >= 0 else 'no wiring', f'| {len(via_pins)} vias exported as pins')
+
 # the export's boundary is the board outline (mil, arcs as segments): shrink that shape, whatever it is
 m = re.search(r'\(boundary\(path signal 0 ([^)]*)\)\s*\)', s)
 assert m, 'boundary not found'

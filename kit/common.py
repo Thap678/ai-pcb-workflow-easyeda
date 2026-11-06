@@ -203,7 +203,7 @@ RETRY_SAFE = {
     'pcb outline-get', 'pcb nets', 'pcb fill list', 'sch list', 'lib by-lcsc', 'lib search', 'doc ls',
     'pcb save', 'sch save', 'pcb pour-rebuild', 'pcb modify', 'pcb lock', 'pcb rip-up', 'pcb pour-delete',
     'pcb track-delete', 'pcb via-delete', 'sch prim-delete', 'pcb drc-rules-set', 'pcb outline-round',
-    'pcb outline-set',
+    'pcb outline-set', 'pcb layout-lint', 'doc reload',
 }
 
 

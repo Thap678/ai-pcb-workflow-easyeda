@@ -1,6 +1,8 @@
 """After an SES import: every track gets the width it was routed with (EasyEDA widens to the net-rule default),
 but never below the net's rule minimum. A track matches the routed segment that contains its midpoint.
-usage: python fix_widths.py dump.json file.ses [--apply]
+usage: python fix_widths.py dump.json file.ses [--apply] [--min-only]
+--min-only: only raise tracks that are below the net's rule minimum (Freerouting necks tracks down to 4.4 mil
+between fine-pitch pins); never narrow anything.
 """
 import json, os, re, sys, math
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -34,6 +36,7 @@ for l in d['copper']['lines']:
     mid = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
     cand = [s for s in segs.get((net, L), []) if on_seg(mid, s[0], s[1]) and on_seg(a, s[0], s[1], 2) and on_seg(b, s[0], s[1], 2)]
     target = min(c[2] for c in cand) if cand else w
+    if '--min-only' in sys.argv: target = w
     target = max(target, MIN.get(net, MIN_DEFAULT))
     if abs(target - w) > 0.05: fix.append((l['primitiveId'], net, L, round(target, 3), a, b, w))
 print('tracks to re-width:', len(fix))
@@ -45,4 +48,11 @@ if '--apply' in sys.argv and fix:
     for _, net, L, w, (x1, y1), (x2, y2), _ in fix:
         bad += not run(['pcb', 'track', '--x1', str(x1), '--y1', str(y1), '--x2', str(x2), '--y2', str(y2),
                         '--layer', str(L), '--width', str(w), '--net', net]).get('ok')
-    print('re-widthed', len(fix) - bad, 'failed', bad, '| save', run(['pcb', 'save']).get('ok'))
+    print('re-widthed', len(fix) - bad, 'reported failed', bad, '| save', run(['pcb', 'save']).get('ok'))
+    # read back: a reported failure may have landed, a reported success may not have
+    lines = run(['pcb', 'track-list'])['result'].get('lines') or []
+    have = {(l.get('net'), round(l['startX']), round(l['startY']), round(l['endX']), round(l['endY'])) for l in lines
+            if l.get('lineWidth', 0) >= MIN.get(l.get('net'), MIN_DEFAULT) - 0.05}
+    miss = [f for f in fix if (f[1], round(f[4][0]), round(f[4][1]), round(f[5][0]), round(f[5][1])) not in have
+            and (f[1], round(f[5][0]), round(f[5][1]), round(f[4][0]), round(f[4][1])) not in have]
+    print('read back: missing', len(miss), [m[1] for m in miss][:10])
