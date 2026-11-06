@@ -12,7 +12,8 @@
 5. **不覆盖用户的手工修改。** 用户会在 EDA 里自己改（换封装、改编号、挪元件）。动手前先 `pcb dump` / 读存盘文件，和上次的快照比，找出用户改过的地方；改动要并进规格文件，而不是被脚本冲掉。
 6. **每阶段过关才进下一阶段。** 过关标准见下文。没过关就停下来修，或者把问题和选项交给用户。
 7. **长任务放后台。** Freerouting 一版要 5–20 分钟，并行跑；不要前台卡住，也不要轮询日志刷屏。
-8. **记录决策。** 用户拍板的方案、参数、例外，写进项目的交接文档（模板见 `templates/requirements.md` 末尾），下一个 agent 接手时先读它。
+8. **原地改板的 CLI 命令要经过守护脚本。** `pcb auto-place`、`pcb route-short`、`pcb beautify` 失败时不回滚，会留下重叠/出界、短路或断网（issue #4/#5/#6）。要用就跑 `python kit/pcb/guard.py place auto-place ...` / `guard.py route-short ...` / `guard.py beautify ...`：先快照，跑完读回，变差的部分自动退回。中途断掉时用 `guard.py restore-copper <快照>` 恢复。
+9. **记录决策。** 用户拍板的方案、参数、例外，写进项目的交接文档（模板见 `templates/requirements.md` 末尾），下一个 agent 接手时先读它。
 
 ## 开始之前
 
@@ -58,6 +59,7 @@ python kit/pcb/place_table.py placement.csv               # 按坐标表摆放�
 
 - 先摆机械约束件（连接器、叠板排针、安装位、按键/屏幕），锁定；再按功能分区摆其余件。去耦电容贴着电源脚。
 - **核对封装**：库里封装会更新。看焊盘尺寸和间距是否互相重叠（本仓库示例里测试点封装变大后焊盘重叠，导致布不通）。
+- 想用 `pcb auto-place` 等自动摆放做种子：`python kit/pcb/guard.py place auto-place [参数]`（新增短路/重叠/出界的件会被挪回，飞线交叉变多则整体撤销）。
 - **过关**：`place_table.py` 报告无出界、无压安装孔，重叠项人工确认过；用户看过布局图。
 
 ## 阶段 5：布线与铺地（docs/05）
@@ -85,6 +87,7 @@ python kit/route/gmetrics.py final_dump.json final        # 地面评分（越�
 python kit/route/render.py --dump final_dump.json --out board.png
 ```
 
+- 不要直接跑 `pcb route-short` / `pcb beautify`：前者会画出贴着异网焊盘的线（0 mil），后者大板会超时、只改一半。确实要用时走 `kit/pcb/guard.py`（见 docs/05 第 5 节）。
 - `route.py` 报 `pre-existing violations` 时**先别调参**：输入里有焊盘重叠，回阶段 4 修。
 - 全部版本都剩几条布不通时，先对比 DSN 焊盘尺寸是否异常（`prep_dsn.py` 只该放大安装孔和无网络的定位柱）。
 - 调参一次改一个维度（过孔代价、底层代价、方向），每批几个版本并行；把前三名的图给用户看，让用户在 2–3 个方向里选。
