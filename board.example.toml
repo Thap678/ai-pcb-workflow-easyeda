@@ -85,3 +85,26 @@ stitch_grid_mm = 4
 [boards.main.fab]                 # kit/fab
 name = "main_v1"                  # 导出文件名前缀
 layers = 2
+
+# 四层板 + 内层电源分割时（kit/route/route_plane.py，docs/05 第 8 节）才写这一节；两层板不要。
+# 区域按顺序排，前面的优先（重叠处归前面的）；坐标 mm，y 向上，和 kit/dump.py 的快照同一个坐标系。
+# [boards.main.planes]
+# plane_layer = 16                  # 分割电源层（Inner2）
+# ground_layer = 15                 # 整层地（Inner1）
+# gap_mm = 0.6                      # 电源区之间的铜间隙
+# keepout_refs = ["L1", "L2"]       # 本体下方顶层 / 底层 / 电源层禁布（电感），地层保留
+# wide_nets = { MOT_A = 1.0, MOT_B = 1.0 }   # 先布、不铺铜的宽线（电机输出）
+#
+# [[boards.main.planes.regions]]
+# net = "VBAT"
+# boxes = [[0, 0, 80, 10], [0, 0, 20, 40]]   # [x0, y0, x1, y1]，可以几块拼
+# cut = [[30, 2, 34, 10]]                    # 从这一区挖掉的块（可省）
+#
+# [[boards.main.planes.regions]]
+# net = "3V3"
+# boxes = [[20, 10, 60, 50]]
+#
+# [[boards.main.planes.pours]]      # 顶层大电流铺铜块：布线器先用 1 mm 线连起这些焊盘，再外扩成铺铜
+# name = "VBAT_IN"
+# net = "VBAT"
+# pads = ["J1.1", "F1.1", "C1.1"]   # 省略 = 该网全部顶层焊盘

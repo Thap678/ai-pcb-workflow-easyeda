@@ -52,7 +52,7 @@ KEYS = {
     '': {'project', 'project_dir', 'default_board', 'backup', 'boards'},
     'backup': {'dir'},
     'board': {'pcb', 'schematic', 'width_mm', 'height_mm', 'corner_mm', 'outline_mm', 'mount_holes_mm',
-              'mount_hole_d_mm', 'pages', 'rules', 'track_classes', 'route', 'ground', 'fab'},
+              'mount_hole_d_mm', 'pages', 'rules', 'track_classes', 'route', 'ground', 'fab', 'planes'},
     'rules': {'copper_mm', 'pour_mm', 'slot_copper_mm', 'slot_pour_mm', 'edge_mm', 'edge_pour_mm', 'hole_mm',
               'hole_pour_mm', 'track_default_mm', 'track_min_mm', 'via_d_mm', 'via_hole_mm', 'hole_to_hole_mm'},
     'track_classes': {'name', 'min_mm', 'default_mm', 'nets'},
@@ -61,6 +61,9 @@ KEYS = {
     'variants': {'id', 'via', 'top', 'bot', 'top_dir', 'bot_dir', 'plane_via', 'ripup', 'fanout', 'passes', 'note'},
     'ground': {'net', 'pour_inset_mm', 'stitch_grid_mm'},
     'fab': {'name', 'layers'},
+    'planes': {'plane_layer', 'ground_layer', 'gap_mm', 'keepout_refs', 'wide_nets', 'regions', 'pours'},
+    'plane_regions': {'net', 'boxes', 'cut'},
+    'plane_pours': {'name', 'net', 'pads'},
 }
 REQUIRED_BOARD = ('pcb', 'width_mm', 'height_mm')
 
@@ -86,6 +89,11 @@ def check_keys(c):
             unknown(tc, 'track_classes', f'{w}.track_classes[{i}]')
         for i, v in enumerate((b.get('route') or {}).get('variants', [])):
             unknown(v, 'variants', f'{w}.route.variants[{i}]')
+        if 'planes' in b:
+            unknown(b['planes'], 'planes', f'{w}.planes')
+            for kind, key in (('plane_regions', 'regions'), ('plane_pours', 'pours')):
+                for i, x in enumerate((b.get('planes') or {}).get(key, [])):
+                    unknown(x, kind, f'{w}.planes.{key}[{i}]')
     if not c.get('boards'): out.append('no [boards.<name>] table')
     return out
 
@@ -107,6 +115,7 @@ class Board:
         self.route = g('route', {})
         self.ground = g('ground', {})
         self.fab = g('fab', {})
+        self.planes = g('planes', {})                     # split power plane layout (4-layer boards), docs/05 s.8
 
     def path(self, p):
         """Resolve a path from the config relative to the config file."""
