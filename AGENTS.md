@@ -11,7 +11,7 @@
 4. **给选项，不问开放题。** 需要用户决定时，给 2–3 个现成选项，标出推荐项和代价（时间、成本、风险），让用户选。用户没意见就按推荐走。
 5. **不覆盖用户的手工修改。** 用户会在 EDA 里自己改（换封装、改编号、挪元件）。动手前先 `pcb dump` / 读存盘文件，和上次的快照比，找出用户改过的地方；改动要并进规格文件，而不是被脚本冲掉。
 6. **每阶段过关才进下一阶段。** 过关标准见下文。没过关就停下来修，或者把问题和选项交给用户。
-7. **长任务放后台。** Freerouting 一版要 5–20 分钟，并行跑；不要前台卡住，也不要轮询日志刷屏。
+7. **长任务放后台。** 布线一版 15–35 分钟（单线程），几组参数并行跑（`route.py`、`plane_par.sh`）；不要前台卡住，也不要轮询日志刷屏。
 8. **原地改板的 CLI 命令要经过守护脚本。** `pcb auto-place`、`pcb route-short`、`pcb beautify` 失败时不回滚，会留下重叠/出界、短路或断网（issue #4/#5/#6）。要用就跑 `python kit/pcb/guard.py place auto-place ...` / `guard.py route-short ...` / `guard.py beautify ...`：先快照，跑完读回，变差的部分自动退回。中途断掉时用 `guard.py restore-copper <快照>` 恢复。
 9. **记录决策。** 用户拍板的方案、参数、例外，写进项目的交接文档（模板见 `templates/requirements.md` 末尾），下一个 agent 接手时先读它。
 
@@ -64,34 +64,53 @@ python kit/pcb/place_table.py placement.csv               # 按坐标表摆放�
 
 ## 阶段 5：布线与铺地（docs/05）
 
+**布线一律用本仓库的成束布线器，不拿 Freerouting 的结果当成品。** 先按板子定一条路，告诉用户：
+
+- **A. 两层板，或电源走线、地两面铺铜的板** → `kit/route/route_bundle.py`（docs/05 第 7 节）。Freerouting 在这里只用来先拿一份电源走法。
+- **B. 四层板，内层一层整地、一层按电源分区** → `kit/route/route_plane.py`（docs/05 第 8 节）。先在 `[boards.<板>.planes]` 写好分区、顶层电源铺铜组、宽线、电感禁布。
+- 只有 A / B 都布不通、调布局也不行时，才考虑 Freerouting 的成品，**并且先问用户**。
+
+为什么写死：2026-11-07 的下板按旧版本阶段只跑了 Freerouting，被用户否决（直角和斜线一堆、信号线穿过电源铺铜块、内层整层铺一种电源）。成束布线器当时已经做出来、在上板用过，但本阶段的命令里没有它，下板就没用上。
+
+A（两层板）：
+
 ```bash
 python kit/backup.py before-route
 easyeda --project <P> --doc <PCB> pcb export-dsn --name board.dsn   # 文件在 .easyeda/artifacts/
 python kit/route/prep_dsn.py <导出的.dsn> prep.dsn
-python kit/route/route.py prep.dsn                        # 配置里的多个参数版本并行；看排名
-python kit/route/batch_score.py --batch route_runs/<板>    # 离线打分（地面/过孔/线长）-> ranking.md
-python kit/route/render.py --dsn prep.dsn --batch route_runs/<板> --top 3   # 前几名的图 + 拼图
-python kit/route/ses_conn.py prep.dsn route_runs/<板>/<最好的id>/out.ses   # 0 open nets
-python kit/route/ses_polish.py <out.ses> --dsn prep.dsn --chamfer 0 --out final.ses
-python kit/route/ses_conn.py prep.dsn final.ses           # 后处理后仍是 0 open nets
-python kit/route/apply_ses.py final.ses                   # 导入，恢复线宽，末尾自动跑连通检查
-python kit/route/pour_gnd.py                              # 两面铺地
-python kit/dump.py poured.json
-python kit/route/stitch.py poured.json                    # 缝合孔（避开焊盘），重建铺铜并存盘
+python kit/route/route.py prep.dsn                        # Freerouting 并行几版，只为拿电源走法
+python kit/route/route_bundle.py prep.dsn route_runs/<板>/<id>/out.ses bundle.ses   # 信号从引脚重布（~15 min）
+python kit/route/ses_smooth.py prep.dsn bundle.ses bundle_s.ses
+python kit/route/ses_check.py prep.dsn bundle_s.ses       # 0 间距违规、0 断网
+# 导入、直连铺铜、GND 孤岛：按 docs/05 第 7 节（ses2target.py + guard.py restore-copper + cover_check.py + gnd_tie.py）
 easyeda --project <P> doc reload <PCB>
 easyeda --project <P> --doc <PCB> pcb drc --json --timeout 300 > drc.json
 python kit/route/drcsum.py drc.json                       # passed True total 0
-python kit/dump.py final_dump.json
-python kit/route/conn.py final_dump.json                  # nets with unrouted connections: 0
-python kit/route/gmetrics.py final_dump.json final        # 地面评分（越高越好）
+python kit/dump.py final_dump.json && python kit/route/gmetrics.py final_dump.json final
 python kit/route/render.py --dump final_dump.json --out board.png
 ```
 
+B（四层板 + 分割电源层）：
+
+```bash
+python kit/backup.py before-route
+python kit/dump.py live.json
+python kit/route/plane_board.py live.json                 # 每个电源区一整块、插件电源脚都在区内；不是就回阶段 4 调布局
+bash kit/route/plane_par.sh live.json route_plane_runs "base:" "dir:--layer-dir"   # 每组一个核，~30 min，放后台
+python kit/route/plane_fixup.py live.json route_plane_runs/base.json fixed.json     # 补缝合孔、补地线
+python kit/route/plane_render.py live.json fixed.json plane.png                    # 给用户看
+python kit/route/plane_apply.py live.json fixed.json      # 自动备份 -> 清旧铜 -> 写线/孔/铺铜/禁布区
+python kit/route/plane_drc.py                             # reload -> 逐网重铺 -> DRC
+python kit/route/plane_check.py --netlist --page <原理图页>   # RESULT: clean
+```
+
+- 布线器报 `STALL`（同一根线被拆 12 次）或 `no path`：**先看位置、改布局**（芯片方向、引脚顺序、挡出线口的小件），不要先调参。见 docs/05 第 8 节「布局决定能不能布通」。动原理图引脚（对调网名）要先问用户，并提醒固件跟着改。
+- 缝合孔、GND 补线、加宽间距**不要塞进布线器**（会不收敛），布通后由 `plane_fixup.py` 补。
 - 不要直接跑 `pcb route-short` / `pcb beautify`：前者会画出贴着异网焊盘的线（0 mil），后者大板会超时、只改一半。确实要用时走 `kit/pcb/guard.py`（见 docs/05 第 5 节）。
 - `route.py` 报 `pre-existing violations` 时**先别调参**：输入里有焊盘重叠，回阶段 4 修。
-- 全部版本都剩几条布不通时，先对比 DSN 焊盘尺寸是否异常（`prep_dsn.py` 只该放大安装孔和无网络的定位柱）。
-- 调参一次改一个维度（过孔代价、底层代价、方向），每批几个版本并行；把前三名的图给用户看，让用户在 2–3 个方向里选。
-- **过关**：DRC 0、`conn.py` 0 断开、用户看过成品图。
+- Freerouting 全部版本都剩几条布不通时，先对比 DSN 焊盘尺寸是否异常（`prep_dsn.py` 只该放大安装孔和无网络的定位柱）。
+- 调参一次改一个维度，每批几个版本并行；把前几名的图给用户看，让用户在 2–3 个方向里选。
+- **过关**：DRC 0（只剩 Netlist Error 时 `plane_check.py --netlist` 逐脚一致）；A：`ses_check.py` 0 违规 0 断网；B：`plane_check.py` 输出 `RESULT: clean`（含实际灌铜的连通、0 条非 45°、0 个直角、内层无走线、电源铺铜块里无信号线、禁布区下无铜）；用户看过成品图。
 
 ## 阶段 6：出板（docs/06）
 

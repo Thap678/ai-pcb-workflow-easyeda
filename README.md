@@ -21,7 +21,7 @@
 ```
 需求 ──► 方案/选型 ──► 引脚分配 ──► 原理图规格(JSON) ──► 建图+逐脚核对
                                                           │
-出板文件+自动检查 ◄── DRC+连通+评分 ◄── 铺地+缝合 ◄── 布线(Freerouting 多版本) ◄── 布局 ◄── 导入PCB+板框+规则
+出板文件+自动检查 ◄── DRC+连通+评分 ◄── 铺地+缝合 ◄── 布线(自研成束布线器，多参数并行) ◄── 布局 ◄── 导入PCB+板框+规则
 ```
 
 | 阶段 | 人做什么 | AI 做什么 | 工具 | 过关标准 |
@@ -30,7 +30,7 @@
 | 2 选型与引脚 | 确认关键器件 | 查 LCSC 料号/库存，写引脚表并自检 | `easyeda lib`、[templates/pinmap_template.py](templates/pinmap_template.py) | 0 重脚、0 外设冲突 |
 | 3 原理图 | 看图 | 写每页规格 JSON → 建图 → 读存盘文件核对 | `kit/sch/` | 每页 0 problems；0 单脚网络 |
 | 4 布局 | 定机械约束、调整 | 按功能分区出坐标表、摆放、查重叠 | `kit/pcb/` | 无重叠、无出界、不压安装孔 |
-| 5 布线与铺地 | 看前几名快照选方向 | 多参数并行布线、打分、后处理、导入、铺铜、缝合 | `kit/route/` | 0 未布、DRC 0、连通 0 断开 |
+| 5 布线与铺地 | 看前几名快照选方向 | 成束布线器（两层板 `route_bundle.py`，四层分割电源层 `route_plane.py`）多参数并行、补缝合孔、导入、铺铜、核对 | `kit/route/` | 0 未布、DRC 0、含灌铜的连通 0 断开、全 45° |
 | 6 出板 | 下单（只能人做） | 导出 Gerber/钻孔/BOM/坐标/网表 + 自动检查 + 备份 | `kit/fab/` | release_check 无 FAIL |
 
 每个阶段的做法、命令和坑写在 [docs/](docs/)。
@@ -58,7 +58,7 @@
 | `kit/common.py` | 读配置、调用 easyeda（重试/超时）、单位换算、PCB 快照 |
 | `kit/sch/` | 原理图：规格检查、逐页建图、读存盘文件逐脚核对、删件 |
 | `kit/pcb/` | 板框和孔、设计规则 + 网络线宽、按坐标表摆放、按快照复位；`guard.py`：给 auto-place / route-short / beautify 加快照、读回和自动回滚，按快照恢复走线 |
-| `kit/route/` | DSN 预处理、Freerouting 多版本并行、成束布线（`route_bundle.py`，低速板「线成束、地成片」）、SES 检查与拉直、后处理、导入、铺地、缝合、GND 孤岛补接、连通、地面评分、出图 |
+| `kit/route/` | DSN 预处理、Freerouting 多版本并行、成束布线（`route_bundle.py`，低速板「线成束、地成片」；`route_plane.py`，四层板内层电源分割，配套 `plane_fixup` / `plane_apply` / `plane_drc` / `plane_check`）、SES 检查与拉直、后处理、导入、铺地、缝合、GND 孤岛补接、连通、地面评分、出图 |
 | `kit/fab/` | 出板导出（Gerber/钻孔/BOM/坐标/IPC-356 + 工程备份）和出板检查 |
 | `kit/backup.py`、`kit/recover/` | 工程备份；工作区丢失后从 AI 会话记录恢复文件 |
 | `tools/check_env.py` | 环境自检 |
