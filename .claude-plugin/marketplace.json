@@ -1,0 +1,11 @@
+{
+  "name": "ai-pcb-workflow-easyeda",
+  "owner": { "name": "Thap678" },
+  "plugins": [
+    {
+      "name": "ai-pcb",
+      "source": "./",
+      "description": "用 AI 在嘉立创EDA 专业版里从零做出一块能下单的板子：六个阶段技能 + 脚本工具包"
+    }
+  ]
+}

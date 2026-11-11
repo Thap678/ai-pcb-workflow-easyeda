@@ -1,0 +1,10 @@
+{
+  "name": "ai-pcb",
+  "description": "让 AI agent 在嘉立创EDA 专业版里从需求做到出板文件的一套技能：需求、选型与引脚、原理图、布局、成束布线与铺铜、出板检查。Skills for designing a PCB end to end in EasyEDA Pro with an AI agent.",
+  "version": "0.5.0",
+  "author": { "name": "Thap678" },
+  "homepage": "https://github.com/Thap678/ai-pcb-workflow-easyeda",
+  "repository": "https://github.com/Thap678/ai-pcb-workflow-easyeda",
+  "license": "MIT",
+  "keywords": ["pcb", "easyeda", "嘉立创EDA", "routing", "schematic"]
+}
