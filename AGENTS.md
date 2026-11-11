@@ -16,7 +16,7 @@
 | 5 布线、铺铜、DRC | [skills/pcb-routing](skills/pcb-routing/SKILL.md) | docs/05 |
 | 6 出板 | [skills/pcb-release](skills/pcb-release/SKILL.md) | docs/06 |
 
-3. 出问题查 `docs/07_踩坑清单.md`；工作区丢了看 `docs/08_备份与恢复.md`。
+3. 出问题查 `docs/07_踩坑清单.md`；改技能前看 `docs/09_规矩的来由.md`；工作区丢了看 `docs/08_备份与恢复.md`。
 
 ## 三条最要紧的
 

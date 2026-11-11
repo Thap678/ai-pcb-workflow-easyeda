@@ -90,7 +90,7 @@ DRC 剩下的零星间距问题改走法，不要改线宽（电源网的线宽�
 - DRC 0。只剩 Netlist Error 时，`plane_check.py --netlist` 逐脚一致才算过；
 - A：`ses_check.py` 0 违规、0 断网；
 - B：`plane_check.py` 输出 `RESULT: clean`。它查的是 EDA 的 DRC 不查或查不准的东西：含实际灌铜的连通、0 条非 45°、0 个直角、内层无走线、电源铺铜块里无信号线、禁布区下无铜；
-- 上面「用户要的是什么样的板子」和 `pcb-workflow` 的「四个目标」逐条对照过；
+- 上面「用户要的是什么样的板子」逐条对照过（能由 `plane_check.py` / `ses_check.py` 查的以脚本结论为准，只人工看脚本不查的几条）；
 - 用户看过成品图；
 - `python <ROOT>/kit/backup.py routed`。
 
