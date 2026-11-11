@@ -75,7 +75,8 @@ python <ROOT>/kit/route/plane_check.py --netlist --page <原理图页 UUID>     
 
 ## 给用户看
 
-- 写进 EDA 之前先出图（`plane_render.py` / `render.py`）。有几版可选时，把前几名的图并排给用户，每版一句话说明差别，让用户选。
+- 写进 EDA 之前先出图（`plane_render.py` / `render.py`），停下来等用户选（停点 S5）。有几版可选时，把前几名的图并排给用户，每版一句话说明差别，让用户选。
+- 布通之后想再优化走线、过孔、铺铜：先只出办法（停点 S6）。同一办法两轮没改善、或要写新算法：停下来给方向，新办法先做小实验（停点 S7）。
 - 用户否决一版时，把否决的理由逐条记进交接文档，下一版逐条对照。
 
 ## 写进 EDA 之后
@@ -89,7 +90,7 @@ DRC 剩下的零星间距问题改走法，不要改线宽（电源网的线宽�
 - DRC 0。只剩 Netlist Error 时，`plane_check.py --netlist` 逐脚一致才算过；
 - A：`ses_check.py` 0 违规、0 断网；
 - B：`plane_check.py` 输出 `RESULT: clean`。它查的是 EDA 的 DRC 不查或查不准的东西：含实际灌铜的连通、0 条非 45°、0 个直角、内层无走线、电源铺铜块里无信号线、禁布区下无铜；
-- 上面「用户要的是什么样的板子」逐条对照过；
+- 上面「用户要的是什么样的板子」和 `pcb-workflow` 的「四个目标」逐条对照过；
 - 用户看过成品图；
 - `python <ROOT>/kit/backup.py routed`。
 

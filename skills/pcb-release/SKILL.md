@@ -41,4 +41,5 @@ python <ROOT>/kit/fab/check.py release/<板>_<时间>    # 写 release_check.md
 
 - `check.py` 无 FAIL；
 - WARN 项用户确认过；
+- `pcb-workflow` 的「四个目标」最后对照一遍，没做到的写进出板说明的「已知的例外」；
 - 出板说明写好；交接文档更新到「已出板，未下单」。
